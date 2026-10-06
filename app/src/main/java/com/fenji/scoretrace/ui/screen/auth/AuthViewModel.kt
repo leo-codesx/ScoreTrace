@@ -41,7 +41,11 @@ class AuthViewModel @Inject constructor(
         val emailCountdown: Int = 0,
     )
 
-    private val _uiState = MutableStateFlow(UiState())
+    /**
+     * [isLoggedIn] 初值同步读本地登录态：首帧就要正确，否则已登录用户会先闪一下登录页。
+     * 之后由 [AuthRepository.observeCurrentUser] 驱动刷新。
+     */
+    private val _uiState = MutableStateFlow(UiState(isLoggedIn = authRepository.isLoggedIn()))
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     private val _toast = MutableSharedFlow<ToastMessage>(extraBufferCapacity = 4)

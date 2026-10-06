@@ -50,27 +50,19 @@ import com.fenji.scoretrace.util.AppToast
 
 /**
  * 已登录账号管理页：账号信息（只读）+ 退出登录 / 注销账号（均二次确认）。
- * 退出或注销成功后返回「我的」页。
+ * 退出/注销后的跳转由 `AppNavHost` 的登录守卫统一处理（清栈回登录页），本页不自作导航。
  */
 @Composable
 fun AccountSettingsScreen(
     onBack: () -> Unit,
-    onLoggedOut: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showLogoutDialog by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
-    var wasLoggedIn by rememberSaveable { mutableStateOf(viewModel.uiState.value.isLoggedIn) }
 
     LaunchedEffect(Unit) {
         viewModel.toast.collect { AppToast.show(it) }
-    }
-    LaunchedEffect(state.isLoggedIn) {
-        if (!state.isLoggedIn && wasLoggedIn) {
-            wasLoggedIn = false
-            onLoggedOut()
-        }
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = ScoreTraceColors.PageBackgroundLight) {

@@ -48,6 +48,7 @@ import com.fenji.scoretrace.ui.music.MusicPlayerViewModel
 import com.fenji.scoretrace.ui.screen.ai.AiHistoryScreen
 import com.fenji.scoretrace.ui.screen.ai.AiScreen
 import com.fenji.scoretrace.ui.screen.auth.LoginScreen
+import com.fenji.scoretrace.ui.screen.auth.AuthViewModel
 import com.fenji.scoretrace.ui.screen.home.HomeScreen
 import com.fenji.scoretrace.ui.screen.mine.AboutScreen
 import com.fenji.scoretrace.ui.screen.mine.AccountSettingsScreen
@@ -75,10 +76,15 @@ import com.fenji.scoretrace.util.AppToast
 fun AppNavHost(
     navController: NavHostController = rememberNavController(),
     musicViewModel: MusicPlayerViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
     onBottomBarVisibleChange: (Boolean) -> Unit = {},
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    // 强制登录：起始页由「同步读到的登录态」决定（AuthViewModel 初值即同步），
+    // 已登录进首页、未登录进登录页；避免已登录用户首帧闪一下登录页。
+    val authState by authViewModel.uiState.collectAsStateWithLifecycle()
+    val startDestination = remember { if (authState.isLoggedIn) Screen.Home.route else Screen.Login.route }
     // 键盘弹出时隐藏底栏，让 AI 输入框紧贴键盘（配合 AiScreen 的 imePadding）
     val imeVisible = WindowInsets.isImeVisible
     // 首页悬浮音乐面板状态提升到此处：点击任意底部 Tab 时一并收起（面板是跨 Tab 的全局浮层）
@@ -102,6 +108,23 @@ fun AppNavHost(
 
     LaunchedEffect(hideBottomBar) { onBottomBarVisibleChange(!hideBottomBar) }
 
+    // 登录态运行时切换（登录成功 / 退出登录）：送到对应页面并清空返回栈，防止按返回键退回上一态。
+    // 首次组合时 startDestination 已经正确，故跳过第一轮（此时路由可能还没 settle）。
+    var guardArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(authState.isLoggedIn) {
+        if (!guardArmed) {
+            guardArmed = true
+            return@LaunchedEffect
+        }
+        val target = if (authState.isLoggedIn) Screen.Home.route else Screen.Login.route
+        if (currentRoute != target) {
+            navController.navigate(target) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     val tabs = listOf(
         BottomBarTab(Screen.Home, R.string.tab_home, rememberVectorPainter(Icons.Filled.Home)),
         BottomBarTab(Screen.AI, R.string.tab_ai, painterResource(R.drawable.ic_ai_logo)),
@@ -114,7 +137,8 @@ fun AppNavHost(
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
     val context = LocalContext.current
     BackHandler {
-        if (currentRoute in topLevelRoutes) {
+        // 底部 Tab 与登录页都没有可返回的上一页（登录页是未登录时的唯一页）→ 双击退出应用
+        if (currentRoute in topLevelRoutes || currentRoute == Screen.Login.route) {
             val now = System.currentTimeMillis()
             if (now - lastBackPressTime < 2000L) {
                 (context as? Activity)?.finish()
@@ -147,7 +171,7 @@ fun AppNavHost(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
@@ -270,7 +294,6 @@ fun AppNavHost(
                     onOpenSubjectConfig = { navController.navigate(Screen.SubjectConfig.route) },
                     onOpenAbout = { navController.navigate(Screen.About.route) },
                     onOpenFeedback = { navController.navigate(Screen.Feedback.route) },
-                    onOpenLogin = { navController.navigate(Screen.Login.route) },
                     onOpenAccountSettings = { navController.navigate(Screen.AccountSettings.route) },
                     onNavigateHome = { navController.navigateToTab(Screen.Home) },
                 )
@@ -345,15 +368,13 @@ fun AppNavHost(
             }
             composable(Screen.Login.route) {
                 LoginScreen(
-                    onBack = { navController.popBackStack() },
-                    onLoggedIn = { navController.popBackStack() },
+                    // 未登录时登录页是唯一页，没有可返回的上一页 → 再按一次退出应用
+                    onBack = { if (!navController.popBackStack()) (context as? Activity)?.finish() },
                 )
             }
             composable(Screen.AccountSettings.route) {
-                AccountSettingsScreen(
-                    onBack = { navController.popBackStack() },
-                    onLoggedOut = { navController.popBackStack() },
-                )
+                // 退出/注销后的跳转由上面的登录守卫统一处理（清栈回登录页）
+                AccountSettingsScreen(onBack = { navController.popBackStack() })
             }
         }
     }

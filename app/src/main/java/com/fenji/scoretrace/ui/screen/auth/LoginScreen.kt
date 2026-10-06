@@ -48,11 +48,12 @@ import com.fenji.scoretrace.util.AppToast
  *
  * Authing 已开启「登录注册合并」，未注册的手机号/邮箱输入验证码后会自动注册，因此没有独立的注册页。
  * 手机号支持「验证码登录」与「密码登录」两种模式；邮箱只支持验证码（控制台仅开启邮箱+验证码）。
+ *
+ * 登录成功后的跳转由 `AppNavHost` 的登录守卫统一处理，本页不自作导航。
  */
 @Composable
 fun LoginScreen(
     onBack: () -> Unit,
-    onLoggedIn: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -66,17 +67,8 @@ fun LoginScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var emailCode by rememberSaveable { mutableStateOf("") }
 
-    // 进入前若已是登录态（正常不会），不触发自动返回；仅响应本次登录成功
-    var wasLoggedIn by rememberSaveable { mutableStateOf(false) }
-
     LaunchedEffect(Unit) {
         viewModel.toast.collect { AppToast.show(it) }
-    }
-    LaunchedEffect(state.isLoggedIn) {
-        if (state.isLoggedIn) {
-            if (wasLoggedIn) onLoggedIn()
-            wasLoggedIn = true
-        }
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = ScoreTraceColors.PageBackgroundLight) {
