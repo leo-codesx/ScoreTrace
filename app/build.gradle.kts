@@ -35,6 +35,12 @@ android {
         // 智谱 GLM-4V-Flash API Key（拍照识分用），同样从 local.properties 读取
         val glmApiKey = localProperties.getProperty("glm.api.key", "")
         buildConfigField("String", "GLM_API_KEY", "\"$glmApiKey\"")
+
+        // Authing 账号系统：App ID 与域名走 local.properties，避免硬编码进仓库
+        val authingAppId = localProperties.getProperty("authing.app.id", "")
+        val authingDomain = localProperties.getProperty("authing.domain", "")
+        buildConfigField("String", "AUTHING_APP_ID", "\"$authingAppId\"")
+        buildConfigField("String", "AUTHING_DOMAIN", "\"$authingDomain\"")
     }
 
     buildTypes {
@@ -126,6 +132,9 @@ dependencies {
 
     // 图片加载（院校校徽）
     implementation(libs.coil.compose)
+
+    // 账号系统（Authing Guard SDK）
+    implementation(libs.authing.guard)
 
     // 测试
     testImplementation(libs.junit)

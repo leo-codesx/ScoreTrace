@@ -3,6 +3,7 @@ package com.fenji.scoretrace
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import cn.authing.guard.Authing
 import com.fenji.scoretrace.data.player.MusicPlayerManager
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -19,6 +20,12 @@ class ScoreTraceApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Authing 全局初始化：只做一次。默认协议是私有化部署的 EInHouse，SaaS 应用须显式改为 EOIDC。
+        // 不调用 Authing.setHost()——SDK 默认 host=authing.cn，public-config 走 console.authing.cn，
+        // 已对当前 App ID 实测可用；传域名反而会被 SDK 加上 console. 前缀而打不通。
+        Authing.init(this, BuildConfig.AUTHING_APP_ID)
+        Authing.setAuthProtocol(Authing.AuthProtocol.EOIDC)
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
 

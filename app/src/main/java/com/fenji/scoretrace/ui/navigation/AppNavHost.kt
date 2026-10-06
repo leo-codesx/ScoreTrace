@@ -47,8 +47,10 @@ import com.fenji.scoretrace.R
 import com.fenji.scoretrace.ui.music.MusicPlayerViewModel
 import com.fenji.scoretrace.ui.screen.ai.AiHistoryScreen
 import com.fenji.scoretrace.ui.screen.ai.AiScreen
+import com.fenji.scoretrace.ui.screen.auth.LoginScreen
 import com.fenji.scoretrace.ui.screen.home.HomeScreen
 import com.fenji.scoretrace.ui.screen.mine.AboutScreen
+import com.fenji.scoretrace.ui.screen.mine.AccountSettingsScreen
 import com.fenji.scoretrace.ui.screen.mine.FeedbackScreen
 import com.fenji.scoretrace.ui.screen.mine.MineScreen
 import com.fenji.scoretrace.ui.screen.notification.NotificationScreen
@@ -94,6 +96,8 @@ fun AppNavHost(
         currentRoute == Screen.AiHistory.route ||
         currentRoute == Screen.About.route ||
         currentRoute == Screen.Feedback.route ||
+        currentRoute == Screen.Login.route ||
+        currentRoute == Screen.AccountSettings.route ||
         (currentRoute == Screen.AI.route && imeVisible)
 
     LaunchedEffect(hideBottomBar) { onBottomBarVisibleChange(!hideBottomBar) }
@@ -266,6 +270,8 @@ fun AppNavHost(
                     onOpenSubjectConfig = { navController.navigate(Screen.SubjectConfig.route) },
                     onOpenAbout = { navController.navigate(Screen.About.route) },
                     onOpenFeedback = { navController.navigate(Screen.Feedback.route) },
+                    onOpenLogin = { navController.navigate(Screen.Login.route) },
+                    onOpenAccountSettings = { navController.navigate(Screen.AccountSettings.route) },
                     onNavigateHome = { navController.navigateToTab(Screen.Home) },
                 )
             }
@@ -336,6 +342,18 @@ fun AppNavHost(
             }
             composable(Screen.Feedback.route) {
                 FeedbackScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onBack = { navController.popBackStack() },
+                    onLoggedIn = { navController.popBackStack() },
+                )
+            }
+            composable(Screen.AccountSettings.route) {
+                AccountSettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLoggedOut = { navController.popBackStack() },
+                )
             }
         }
     }

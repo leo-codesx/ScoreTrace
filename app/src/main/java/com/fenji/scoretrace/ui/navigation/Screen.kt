@@ -42,6 +42,12 @@ sealed class Screen(val route: String) {
     /** 意见反馈：从「我的」页进入，全屏页 */
     data object Feedback : Screen("feedback")
 
+    /** 登录 / 注册：从「我的」页账号卡进入，全屏页 */
+    data object Login : Screen("auth/login")
+
+    /** 账号设置：已登录时从「我的」页账号卡进入，全屏页 */
+    data object AccountSettings : Screen("auth/account_settings")
+
     /** 成绩详情：从成绩页历史记录进入，携带考试 ID */
     data class ScoreDetail(val examId: Long) : Screen(ROUTE) {
         companion object {

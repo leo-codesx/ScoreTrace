@@ -20,6 +20,7 @@ coil = "2.7.0"
 junit = "4.13.2"
 androidxJunit = "1.2.1"
 espressoCore = "3.6.1"
+authing = "1.5.8"
 
 [libraries]
 # AndroidX 基础
@@ -68,6 +69,9 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 
 # 图片加载（院校校徽，含内存/磁盘缓存）
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+
+# 账号系统（Authing Guard SDK：只取底层 AuthClient，不使用其内置 UI）
+authing-guard = { module = "cn.authing:guard", version.ref = "authing" }
 
 # 测试
 junit = { module = "junit:junit", version.ref = "junit" }

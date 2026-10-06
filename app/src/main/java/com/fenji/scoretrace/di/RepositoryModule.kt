@@ -1,6 +1,7 @@
 package com.fenji.scoretrace.di
 
 import com.fenji.scoretrace.data.repository.DefaultConversationRepository
+import com.fenji.scoretrace.data.repository.DefaultAuthRepository
 import com.fenji.scoretrace.data.repository.DefaultExamRecordRepository
 import com.fenji.scoretrace.data.repository.DefaultGlmVisionRepository
 import com.fenji.scoretrace.data.repository.DefaultMajorRepository
@@ -15,6 +16,7 @@ import com.fenji.scoretrace.data.repository.DefaultStudyTaskRepository
 import com.fenji.scoretrace.data.repository.DefaultSubjectRepository
 import com.fenji.scoretrace.data.repository.DefaultTargetSchoolRepository
 import com.fenji.scoretrace.data.repository.ConversationRepository
+import com.fenji.scoretrace.data.repository.AuthRepository
 import com.fenji.scoretrace.data.repository.ExamRecordRepository
 import com.fenji.scoretrace.data.repository.GlmVisionRepository
 import com.fenji.scoretrace.data.repository.MajorRepository
@@ -78,4 +80,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindSchoolAdmissionRepository(impl: DefaultSchoolAdmissionRepository): SchoolAdmissionRepository
+
+    @Binds
+    abstract fun bindAuthRepository(impl: DefaultAuthRepository): AuthRepository
 }

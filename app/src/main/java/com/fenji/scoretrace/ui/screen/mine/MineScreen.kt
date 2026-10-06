@@ -68,10 +68,13 @@ fun MineScreen(
     onOpenSubjectConfig: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenFeedback: () -> Unit = {},
+    onOpenLogin: () -> Unit = {},
+    onOpenAccountSettings: () -> Unit = {},
     onNavigateHome: () -> Unit = {},
     viewModel: MineViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val accountUser by viewModel.authUser.collectAsStateWithLifecycle()
     val provinceStatus by viewModel.provinceStatus.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showClearDataDialog by rememberSaveable { mutableStateOf(false) }
@@ -107,6 +110,13 @@ fun MineScreen(
                 examCount = state.examCount,
                 checkInDays = state.continuousCheckIn,
                 onEditProfile = { showEditProfile = true },
+            )
+
+            AccountCard(
+                user = accountUser,
+                onClick = {
+                    if (accountUser == null) onOpenLogin() else onOpenAccountSettings()
+                },
             )
 
             // ── 学习

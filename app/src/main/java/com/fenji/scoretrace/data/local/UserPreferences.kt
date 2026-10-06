@@ -2,6 +2,7 @@ package com.fenji.scoretrace.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -149,6 +150,55 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    /**
+     * 账号登录态：Authing 下发的 access token 镜像。
+     * SDK 自身已以加密方式持久化 token（`Authing.getCurrentUser()` 会自动从磁盘恢复），
+     * 这里额外落一份，用于快速判断登录态与未来云端同步。未登录时为 null。
+     */
+    val authToken: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_AUTH_TOKEN]
+    }
+
+    suspend fun setAuthToken(value: String?) {
+        context.dataStore.edit { preferences ->
+            if (value == null) preferences.remove(KEY_AUTH_TOKEN) else preferences[KEY_AUTH_TOKEN] = value
+        }
+    }
+
+    /** 账号用户 ID（Authing userId）；未登录时为 null。 */
+    val authUserId: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_AUTH_USER_ID]
+    }
+
+    suspend fun setAuthUserId(value: String?) {
+        context.dataStore.edit { preferences ->
+            if (value == null) preferences.remove(KEY_AUTH_USER_ID) else preferences[KEY_AUTH_USER_ID] = value
+        }
+    }
+
+    /**
+     * 账号用户信息（[com.fenji.scoretrace.data.repository.AuthUser] 的 JSON 序列化）。
+     * 作为 UI 登录态的唯一真源：登录写入、退出/注销清空。
+     */
+    val authUserInfo: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_AUTH_USER_INFO]
+    }
+
+    suspend fun setAuthUserInfo(value: String?) {
+        context.dataStore.edit { preferences ->
+            if (value == null) preferences.remove(KEY_AUTH_USER_INFO) else preferences[KEY_AUTH_USER_INFO] = value
+        }
+    }
+
+    /** 清空账号登录态（authToken / authUserId / authUserInfo）。 */
+    suspend fun clearAuth() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(KEY_AUTH_TOKEN)
+            preferences.remove(KEY_AUTH_USER_ID)
+            preferences.remove(KEY_AUTH_USER_INFO)
+        }
+    }
+
     /** 今日 AI 重点文案（缓存） */
     val aiFocus: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[KEY_AI_FOCUS]
@@ -172,23 +222,44 @@ class UserPreferences @Inject constructor(
         }
     }
 
-    /** 清空全部偏好（用于「清除全部数据」，各字段会回落到默认值）。 */
+    /** 清空全部偏好（用于「清除全部数据」，各字段会回落到默认值）。账号登录态不在清除范围内。 */
     suspend fun clearAll() {
-        context.dataStore.edit { preferences -> preferences.clear() }
+        context.dataStore.edit { preferences ->
+            val auth = snapshotAuth(preferences)
+            preferences.clear()
+            restoreAuth(preferences, auth)
+        }
     }
 
     /**
      * 清空全部偏好，但保留定位结果（省份 + 已定位标记）。
      * 「清除全部数据」后不应丢失定位缓存，免得用户重新触发一轮定位。
+     * 同样保留账号登录态——清除本地学习数据不应把用户踢下线。
      */
     suspend fun clearAllKeepLocation() {
         context.dataStore.edit { preferences ->
             val province = preferences[KEY_PROVINCE]
             val located = preferences[KEY_PROVINCE_LOCATED]
+            val auth = snapshotAuth(preferences)
             preferences.clear()
             if (province != null) preferences[KEY_PROVINCE] = province
             if (located != null) preferences[KEY_PROVINCE_LOCATED] = located
+            restoreAuth(preferences, auth)
         }
+    }
+
+    private fun snapshotAuth(preferences: Preferences): List<Pair<Preferences.Key<String>, String>> =
+        listOfNotNull(
+            preferences[KEY_AUTH_TOKEN]?.let { Pair(KEY_AUTH_TOKEN, it) },
+            preferences[KEY_AUTH_USER_ID]?.let { Pair(KEY_AUTH_USER_ID, it) },
+            preferences[KEY_AUTH_USER_INFO]?.let { Pair(KEY_AUTH_USER_INFO, it) },
+        )
+
+    private fun restoreAuth(
+        preferences: MutablePreferences,
+        auth: List<Pair<Preferences.Key<String>, String>>,
+    ) {
+        auth.forEach { (key, value) -> preferences[key] = value }
     }
 
     private companion object {
@@ -205,6 +276,9 @@ class UserPreferences @Inject constructor(
         val KEY_NICKNAME = stringPreferencesKey("nickname")
         val KEY_AVATAR_PATH = stringPreferencesKey("avatar_path")
         val KEY_USER_ID = stringPreferencesKey("user_id")
+        val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
+        val KEY_AUTH_USER_ID = stringPreferencesKey("auth_user_id")
+        val KEY_AUTH_USER_INFO = stringPreferencesKey("auth_user_info")
 
         const val SUBJECT_SEPARATOR = ","
         const val DEFAULT_SELECTED_SUBJECTS = "物理,化学,生物"

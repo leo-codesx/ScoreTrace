@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fenji.scoretrace.data.local.UserPreferences
+import com.fenji.scoretrace.data.model.AuthUser
+import com.fenji.scoretrace.data.repository.AuthRepository
 import com.fenji.scoretrace.data.repository.ConversationRepository
 import com.fenji.scoretrace.data.repository.ExamRecordRepository
 import com.fenji.scoretrace.data.repository.NotificationRepository
@@ -75,6 +77,7 @@ class MineViewModel @Inject constructor(
     @param:ApplicationContext private val appContext: Context,
     private val userPreferences: UserPreferences,
     private val targetSchoolRepository: TargetSchoolRepository,
+    private val authRepository: AuthRepository,
     private val scoreRecordRepository: ScoreRecordRepository,
     private val studyTaskRepository: StudyTaskRepository,
     private val subjectRepository: SubjectRepository,
@@ -89,6 +92,13 @@ class MineViewModel @Inject constructor(
 
     private val _toast = MutableSharedFlow<ToastMessage>(extraBufferCapacity = 2)
     val toast: SharedFlow<ToastMessage> = _toast.asSharedFlow()
+
+    /** 当前登录的账号用户（null 表示未登录），驱动「我的」页账号卡。 */
+    val authUser: StateFlow<AuthUser?> = authRepository.observeCurrentUser().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = null,
+    )
 
     val uiState: StateFlow<MineUiState> = combine(
         userPreferences.themeMode,
