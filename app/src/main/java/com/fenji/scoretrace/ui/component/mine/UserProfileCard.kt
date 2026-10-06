@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,19 +36,24 @@ import com.fenji.scoretrace.ui.theme.ScoreTraceColors
 import java.io.File
 
 /**
- * 「我的」页顶部用户信息卡：蓝色渐变背景 + 头像 + 备考人信息 + 三统计数据。
- * 底部圆角 24dp，右上角为编辑入口。
+ * 「我的」页顶部用户信息卡：蓝色渐变背景 + 头像 + 账号信息 + 三统计数据。
+ * 底部圆角 24dp。
+ *
+ * 账号信息直接融入本卡（不再有独立的白色账号卡）：昵称 → 脱敏手机号 → 届别/目标；
+ * 右上角齿轮进入账号设置，点头像进入资料编辑。
  */
 @Composable
 fun UserProfileCard(
-    nickname: String,
+    displayName: String,
+    maskedPhone: String?,
     avatarPath: String?,
     targetSchool: String,
     examYear: String,
     studyDays: Int,
     examCount: Int,
     checkInDays: Int,
-    onEditProfile: () -> Unit,
+    onAvatarClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val schoolText = targetSchool.ifBlank { "未设置目标院校" }
@@ -80,7 +85,7 @@ fun UserProfileCard(
             }
             .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 20.dp),
     ) {
-        // 编辑按钮（右上角）
+        // 账号设置入口（右上角）
         Box(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
@@ -88,25 +93,26 @@ fun UserProfileCard(
                     .size(36.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.20f))
-                    .clickable(onClick = onEditProfile),
+                    .clickable(onClick = onSettingsClick),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = "编辑资料",
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "账号设置",
                     tint = Color.White,
                     modifier = Modifier.size(18.dp),
                 )
             }
         }
 
-        // 头像 + 信息
+        // 头像 + 账号信息
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(64.dp)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(Color.White)
+                    .clickable(onClick = onAvatarClick),
                 contentAlignment = Alignment.Center,
             ) {
                 if (avatarPath != null) {
@@ -121,7 +127,7 @@ fun UserProfileCard(
                 } else {
                     Icon(
                         imageVector = Icons.Filled.Person,
-                        contentDescription = null,
+                        contentDescription = "编辑资料",
                         tint = ScoreTraceColors.BrandPrimary,
                         modifier = Modifier.size(36.dp),
                     )
@@ -130,11 +136,19 @@ fun UserProfileCard(
             Spacer(modifier = Modifier.width(14.dp))
             Column {
                 Text(
-                    text = nickname,
+                    text = displayName,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                 )
+                if (maskedPhone != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = maskedPhone,
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.70f),
+                    )
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "$examYear 届 · 目标 $schoolText",

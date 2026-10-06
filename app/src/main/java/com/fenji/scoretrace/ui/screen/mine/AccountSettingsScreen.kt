@@ -83,7 +83,7 @@ fun AccountSettingsScreen(
                 Avatar(user)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = user?.nickname?.takeIf { it.isNotBlank() } ?: "已登录用户",
+                    text = AuthUser.clean(user?.nickname) ?: "已登录用户",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = ScoreTraceColors.TextPrimaryLight,

@@ -122,10 +122,10 @@ class DefaultAuthRepository @Inject constructor(
 
     private fun UserInfo.toAuthUser(): AuthUser = AuthUser(
         id = getId() ?: getSub() ?: "",
-        nickname = getNickname() ?: getName() ?: getUsername(),
-        phone = getPhone_number(),
-        email = getEmail(),
-        photo = getPhoto() ?: getPicture(),
+        nickname = AuthUser.clean(getNickname() ?: getName() ?: getUsername()),
+        phone = AuthUser.clean(getPhone_number()),
+        email = AuthUser.clean(getEmail()),
+        photo = AuthUser.clean(getPhoto() ?: getPicture()),
         createdAt = getCreated_at(),
     )
 

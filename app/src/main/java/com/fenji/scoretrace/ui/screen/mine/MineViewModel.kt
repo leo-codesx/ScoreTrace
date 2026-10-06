@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -93,12 +94,29 @@ class MineViewModel @Inject constructor(
     private val _toast = MutableSharedFlow<ToastMessage>(extraBufferCapacity = 2)
     val toast: SharedFlow<ToastMessage> = _toast.asSharedFlow()
 
-    /** 当前登录的账号用户（null 表示未登录），驱动「我的」页账号卡。 */
-    val authUser: StateFlow<AuthUser?> = authRepository.observeCurrentUser().stateIn(
+    /**
+     * 顶部卡展示名：Authing 昵称 → 本地昵称 → 「备考人」。
+     * Authing 对未设置字段返回的是字面量 "null"，先经 [AuthUser.clean] 归一，避免显示 "null"。
+     */
+    val displayName: StateFlow<String> = combine(
+        authRepository.observeCurrentUser(),
+        userPreferences.nickname,
+    ) { user, localNickname ->
+        AuthUser.clean(user?.nickname) ?: AuthUser.clean(localNickname) ?: DEFAULT_DISPLAY_NAME
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = null,
+        initialValue = DEFAULT_DISPLAY_NAME,
     )
+
+    /** 顶部卡展示的脱敏手机号（如 180****4493）；未登录或号码无效时为 null。 */
+    val maskedPhone: StateFlow<String?> = authRepository.observeCurrentUser()
+        .map { it?.maskedPhone }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null,
+        )
 
     val uiState: StateFlow<MineUiState> = combine(
         userPreferences.themeMode,
@@ -274,4 +292,8 @@ class MineViewModel @Inject constructor(
         val nickname: String,
         val avatarPath: String?,
     )
+
+    private companion object {
+        const val DEFAULT_DISPLAY_NAME = "备考人"
+    }
 }
