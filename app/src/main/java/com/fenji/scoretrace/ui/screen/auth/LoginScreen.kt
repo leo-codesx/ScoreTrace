@@ -79,12 +79,6 @@ fun LoginScreen(
         }
     }
 
-    val canSubmit = when {
-        channelIndex == 0 && phoneModeIndex == 0 -> phone.length == 11 && phoneCode.isNotBlank()
-        channelIndex == 0 && phoneModeIndex == 1 -> phone.length == 11 && password.length >= 8
-        else -> email.isNotBlank() && emailCode.isNotBlank()
-    }
-
     Surface(modifier = Modifier.fillMaxSize(), color = ScoreTraceColors.PageBackgroundLight) {
         Column(modifier = Modifier.fillMaxSize()) {
             AuthTopBar(title = "登录 / 注册", onBack = onBack)
@@ -155,7 +149,7 @@ fun LoginScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             AuthCodeButton(
                                 countdown = state.phoneCountdown,
-                                enabled = !state.isLoading && phone.length == 11,
+                                enabled = !state.isLoading,
                                 onClick = { viewModel.sendSmsCode(phone) },
                             )
                         }
@@ -199,7 +193,7 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         AuthCodeButton(
                             countdown = state.emailCountdown,
-                            enabled = !state.isLoading && email.isNotBlank(),
+                            enabled = !state.isLoading,
                             onClick = { viewModel.sendEmailCode(email) },
                         )
                     }
@@ -209,7 +203,9 @@ fun LoginScreen(
 
                 AuthGradientButton(
                     text = "登录 / 注册",
-                    enabled = canSubmit,
+                    // 按钮不禁用：不合法的输入由 AuthViewModel 校验并以 AppToast 告知原因，
+                    // 否则在按钮上直接禁用会让用户不知道为什么点不动。
+                    enabled = true,
                     loading = state.isLoading,
                     onClick = {
                         when {

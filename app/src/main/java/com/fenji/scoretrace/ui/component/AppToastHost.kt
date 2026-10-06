@@ -17,12 +17,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -57,7 +61,8 @@ import com.fenji.scoretrace.util.ToastItem
  * 新提示从底部滑入并轻微放大；关闭时向下滑出。点击任意一条可立即关闭。
  *
  * @param bottomPadding 距屏幕底部的额外间距（不含系统导航栏）：底栏可见时调用方传「底栏高度 + 间隔」，
- *   隐藏底栏的全屏页传更小的值。[navigationBarsPadding] 另行避让系统手势条。
+ *   隐藏底栏的全屏页传更小的值。系统导航栏与软键盘由 [windowInsetsPadding] 统一避让——
+ *   输入类页面（如登录页）键盘弹起时，提示不会被键盘挡住。
  */
 @Composable
 fun AppToastHost(
@@ -67,7 +72,7 @@ fun AppToastHost(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
+            .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
             .padding(horizontal = 24.dp)
             .padding(bottom = bottomPadding)
             .animateContentSize(),
