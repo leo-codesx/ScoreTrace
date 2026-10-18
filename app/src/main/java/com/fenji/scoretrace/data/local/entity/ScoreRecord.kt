@@ -19,4 +19,6 @@ data class ScoreRecord(
     val primarySubject: String? = null,
     /** 新高考 3+1+2 再选科目（化学/生物/政治/地理）；null 表示未填写。存名称字符串，不建外键。 */
     val secondarySubject: String? = null,
+    /** 归属账号（Authing userId）；null 表示尚未与账号绑定的本机历史数据。 */
+    val userId: String? = null,
 )

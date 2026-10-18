@@ -2,4 +2,6 @@
 <resources>
     <!-- 深色模式启动窗口背景：与 Compose 深色页底 #0F172A 对齐，避免冷启动瞬间闪白 -->
     <color name="window_background">#FF0F172A</color>
+    <!-- 深色模式启动画面背景：与深色页底一致，避免刺眼白/亮蓝闪屏 -->
+    <color name="splash_background">#FF10233F</color>
 </resources>

@@ -3,6 +3,7 @@ package com.fenji.scoretrace.ui.screen.auth
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,7 +35,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -54,9 +54,15 @@ import com.fenji.scoretrace.util.AppToast
 @Composable
 fun LoginScreen(
     onBack: () -> Unit,
+    // 未登录时登录页是唯一页，无上一页可返回，默认不显示返回箭头；
+    // 从「账号设置」等二级入口进入时传 true 保留返回箭头。
+    showBack: Boolean = false,
+    onOpenPrivacy: () -> Unit = {},
+    onOpenAgreement: () -> Unit = {},
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
 
     var channelIndex by rememberSaveable { mutableIntStateOf(0) }   // 0 手机号 / 1 邮箱
     var phoneModeIndex by rememberSaveable { mutableIntStateOf(0) } // 0 验证码 / 1 密码
@@ -73,7 +79,7 @@ fun LoginScreen(
 
     Surface(modifier = Modifier.fillMaxSize(), color = ScoreTraceColors.PageBackgroundLight) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AuthTopBar(title = "登录 / 注册", onBack = onBack)
+            AuthTopBar(title = "登录 / 注册", onBack = if (showBack) onBack else null)
 
             Column(
                 modifier = Modifier
@@ -101,15 +107,13 @@ fun LoginScreen(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("欢迎使用 ScoreTrace", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = ScoreTraceColors.TextPrimaryLight)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "登录后可在多设备同步数据（即将支持）",
-                    fontSize = 13.sp,
-                    color = ScoreTraceColors.TextTertiaryLight,
-                    textAlign = TextAlign.Center,
-                )
 
                 Spacer(modifier = Modifier.height(28.dp))
+
+                if (!isOnline) {
+                    OfflineNotice(onRetry = { AppToast.info("正在检测网络…") })
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
                 AuthSegmentedTabs(
                     options = listOf("手机号", "邮箱"),
@@ -141,7 +145,7 @@ fun LoginScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             AuthCodeButton(
                                 countdown = state.phoneCountdown,
-                                enabled = !state.isLoading,
+                                enabled = !state.isLoading && isOnline,
                                 onClick = { viewModel.sendSmsCode(phone) },
                             )
                         }
@@ -185,7 +189,7 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         AuthCodeButton(
                             countdown = state.emailCountdown,
-                            enabled = !state.isLoading,
+                            enabled = !state.isLoading && isOnline,
                             onClick = { viewModel.sendEmailCode(email) },
                         )
                     }
@@ -200,7 +204,9 @@ fun LoginScreen(
                     enabled = true,
                     loading = state.isLoading,
                     onClick = {
-                        when {
+                        if (!isOnline) {
+                            AppToast.warning("网络未连接，请连接网络后重试")
+                        } else when {
                             channelIndex == 0 && phoneModeIndex == 0 -> viewModel.loginByPhone(phone, phoneCode)
                             channelIndex == 0 -> viewModel.loginByPassword(phone, password)
                             else -> viewModel.loginByEmail(email, emailCode)
@@ -210,12 +216,28 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "登录即表示同意《用户协议》和《隐私政策》",
-                    fontSize = 12.sp,
-                    color = ScoreTraceColors.TextTertiaryLight,
-                    textAlign = TextAlign.Center,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("登录即表示同意", fontSize = 12.sp, color = ScoreTraceColors.TextTertiaryLight)
+                    Text(
+                        text = "《用户协议》",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = ScoreTraceColors.BrandPrimary,
+                        modifier = Modifier.clickable(onClick = onOpenAgreement),
+                    )
+                    Text("和", fontSize = 12.sp, color = ScoreTraceColors.TextTertiaryLight)
+                    Text(
+                        text = "《隐私政策》",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = ScoreTraceColors.BrandPrimary,
+                        modifier = Modifier.clickable(onClick = onOpenPrivacy),
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -223,8 +245,7 @@ fun LoginScreen(
     }
 }
 
-/** 「获取验证码」按钮：发送成功后进入 [AuthViewModel] 驱动的倒计时，期间禁用。 */
-@Composable
+/** 「获取验证码」按钮：发送成功后进入 [AuthViewModel] 驱动的倒计时，期间禁用。 */@Composable
 private fun AuthCodeButton(
     countdown: Int,
     enabled: Boolean,
@@ -251,6 +272,33 @@ private fun AuthCodeButton(
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = if (enabled && !counting) ScoreTraceColors.BrandPrimary else ScoreTraceColors.TextTertiaryLight,
+        )
+    }
+}
+
+/** 断网提示条：未连接网络时显示，提示联网后重试（网络恢复由 ConnectivityObserver 自动驱动）。 */
+@Composable
+private fun OfflineNotice(onRetry: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(ScoreTraceColors.WarningOrange.copy(alpha = 0.10f))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "网络未连接，请连接网络后重试",
+            fontSize = 13.sp,
+            color = ScoreTraceColors.WarningOrange,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "重试",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = ScoreTraceColors.BrandPrimary,
+            modifier = Modifier.clickable(onClick = onRetry),
         )
     }
 }

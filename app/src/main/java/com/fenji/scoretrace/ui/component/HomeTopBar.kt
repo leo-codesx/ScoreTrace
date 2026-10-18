@@ -49,6 +49,7 @@ fun HomeTopBar(
     subtitle: String,
     isMusicPlaying: Boolean,
     unreadCount: Int,
+    isOnline: Boolean = true,
     onMusicClick: () -> Unit,
     onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -76,11 +77,17 @@ fun HomeTopBar(
                 )
             }
             Spacer(modifier = Modifier.size(2.dp))
-            Text(
-                text = subtitle,
-                fontSize = 11.sp,
-                color = ScoreTraceColors.TextSecondaryLight,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = ScoreTraceColors.TextSecondaryLight,
+                )
+                if (!isOnline) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    OfflineChip()
+                }
+            }
         }
 
         // 右侧操作区
@@ -139,6 +146,27 @@ fun HomeTopBar(
                 }
             }
         }
+    }
+}
+
+/** 离线标识：断网时提示用户当前看的是本地数据（与 AI 页徽章同义）。 */
+@Composable
+private fun OfflineChip() {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(ScoreTraceColors.TextTertiaryLight.copy(alpha = 0.15f))
+            .padding(horizontal = 6.dp, vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(5.dp)
+                .clip(CircleShape)
+                .background(ScoreTraceColors.TextTertiaryLight),
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = "离线", fontSize = 10.sp, color = ScoreTraceColors.TextTertiaryLight)
     }
 }
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,15 +21,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.fenji.scoretrace.data.local.UserPreferences
 import com.fenji.scoretrace.ui.component.AppToastHost
+import com.fenji.scoretrace.ui.component.CrashReportDialogHost
 import com.fenji.scoretrace.ui.navigation.AppNavHost
 import com.fenji.scoretrace.ui.theme.ScoreTraceTheme
 import com.fenji.scoretrace.util.AppLogger
 import com.fenji.scoretrace.util.LocationHelper
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -47,6 +51,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Android 12+ 启动画面：必须在 setContentView/setContent 之前安装（文档要求置于 super.onCreate 之前）
+        val splashScreen = installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         AppLogger.i("AppStart", "MainActivity onCreate")
@@ -54,7 +60,15 @@ class MainActivity : ComponentActivity() {
         // 在「深色/浅色」与系统不一致时出现一次闪色（旧数据 install -r 时更明显）。
         val initialThemeMode = runCatching { runBlocking { userPreferences.themeMode.first() } }
             .getOrDefault("system")
+        // 保持启动画面直到首帧渲染完成：系统 Splash 叠加在已绘制内容之上，不阻塞启动。
+        // 期间 Logo 由系统做「淡入 + 缩放」，冷启动总耗时控制在 3 秒内。
+        var keepSplash by mutableStateOf(true)
+        splashScreen.setKeepOnScreenCondition { keepSplash }
         setContent {
+            LaunchedEffect(Unit) {
+                delay(SPLASH_MIN_DURATION_MS)
+                keepSplash = false
+            }
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = initialThemeMode)
             val darkTheme = when (themeMode) {
                 "light" -> false
@@ -74,6 +88,7 @@ class MainActivity : ComponentActivity() {
                             bottomPadding = if (bottomBarVisible) 72.dp else 16.dp,
                             modifier = Modifier.align(Alignment.BottomCenter),
                         )
+                        CrashReportDialogHost()
                     }
                 }
             }
@@ -111,4 +126,9 @@ class MainActivity : ComponentActivity() {
     private fun hasCoarseLocationPermission(): Boolean =
         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
+
+    private companion object {
+        /** 启动画面最短展示时长：Logo 淡入+缩放的可见时间，冷启动总耗时仍控制在 3 秒内。 */
+        const val SPLASH_MIN_DURATION_MS = 1500L
+    }
 }

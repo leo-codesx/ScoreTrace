@@ -118,6 +118,15 @@ class MineViewModel @Inject constructor(
             initialValue = null,
         )
 
+    /** 是否已登录：控制「开发者选项」入口是否显示（仅登录用户可见）。 */
+    val isLoggedIn: StateFlow<Boolean> = authRepository.observeCurrentUser()
+        .map { it != null }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = authRepository.isLoggedIn(),
+        )
+
     val uiState: StateFlow<MineUiState> = combine(
         userPreferences.themeMode,
         userPreferences.autoPlayMusic,

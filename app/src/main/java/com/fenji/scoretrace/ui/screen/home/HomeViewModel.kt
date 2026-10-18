@@ -1,6 +1,7 @@
 package com.fenji.scoretrace.ui.screen.home
 
 import androidx.compose.ui.graphics.Color
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fenji.scoretrace.data.local.UserPreferences
@@ -22,7 +23,9 @@ import com.fenji.scoretrace.util.DateUtils
 import com.fenji.scoretrace.util.aggregateExams
 import com.fenji.scoretrace.util.homeSchoolTags
 import com.fenji.scoretrace.util.rankRecordFor
+import com.fenji.scoretrace.util.observeOnlineStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,6 +88,7 @@ class HomeViewModel @Inject constructor(
     private val examRecordRepository: ExamRecordRepository,
     private val deepSeekRepository: DeepSeekRepository,
     private val notificationRepository: NotificationRepository,
+    @param:ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     /** 立即发射一次当前时间，之后每秒发射一次，驱动秒级倒计时 */
@@ -126,6 +130,14 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = 0,
+        )
+
+    /** 网络在线状态：断网时首页顶部显示「离线」标识（本地数据仍可正常查看）。 */
+    val isOnline: StateFlow<Boolean> = appContext.observeOnlineStatus()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = true,
         )
 
     /**

@@ -3,4 +3,6 @@
     <color name="white">#FFFFFFFF</color>
     <!-- 启动窗口背景（Pre-Compose）：浅色白；深色由 values-night 覆盖为 #0F172A，避免冷启动白屏闪烁 -->
     <color name="window_background">#FFFFFFFF</color>
+    <!-- 启动画面背景色（SplashScreen API 仅支持纯色，取品牌渐变起色 #4A90E2） -->
+    <color name="splash_background">#FF4A90E2</color>
 </resources>

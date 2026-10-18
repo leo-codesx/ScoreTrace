@@ -1,5 +1,6 @@
 package com.fenji.scoretrace.ui.screen.auth
 
+import android.content.Context
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,17 +8,23 @@ import com.fenji.scoretrace.data.model.AuthUser
 import com.fenji.scoretrace.data.repository.AuthRepository
 import com.fenji.scoretrace.util.AppToastType
 import com.fenji.scoretrace.util.ToastMessage
+import com.fenji.scoretrace.util.observeOnlineStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 /**
@@ -29,6 +36,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    @param:ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     data class UiState(
@@ -50,6 +58,14 @@ class AuthViewModel @Inject constructor(
 
     private val _toast = MutableSharedFlow<ToastMessage>(extraBufferCapacity = 4)
     val toast: SharedFlow<ToastMessage> = _toast.asSharedFlow()
+
+    /** 网络在线状态：登录页据此在断网时禁用「获取验证码」并提示。 */
+    val isOnline: StateFlow<Boolean> = appContext.observeOnlineStatus()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = true,
+        )
 
     private var phoneCountdownJob: Job? = null
     private var emailCountdownJob: Job? = null
@@ -196,7 +212,10 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                block()
+                // 统一超时：登录请求 10 秒无响应即提示重试，避免按钮长时间转圈
+                withTimeout(AUTH_TIMEOUT_MS) { block() }
+            } catch (e: TimeoutCancellationException) {
+                notify("网络超时，请检查网络后重试", AppToastType.Error)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -234,6 +253,7 @@ class AuthViewModel @Inject constructor(
     private companion object {
         const val COUNTDOWN_SECONDS = 60
         const val MIN_PASSWORD_LENGTH = 8
+        const val AUTH_TIMEOUT_MS = 10_000L
         val PHONE_REGEX = Regex("^1\\d{10}$")
     }
 }

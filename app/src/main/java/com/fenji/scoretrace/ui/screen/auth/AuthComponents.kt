@@ -42,31 +42,36 @@ import com.fenji.scoretrace.ui.theme.ScoreTraceColors
 import com.fenji.scoretrace.ui.theme.pressScale
 import com.fenji.scoretrace.ui.theme.rememberPressSource
 
-/** 账号相关页面共用的顶栏：圆形返回按钮 + 标题。 */
+/**
+ * 账号相关页面共用的顶栏：圆形返回按钮 + 标题。
+ * [onBack] 为 null 时不显示返回按钮（如未登录时登录页是唯一页，没有可返回的上一页）。
+ */
 @Composable
-fun AuthTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun AuthTopBar(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 12.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface)
-                .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "返回",
-                tint = ScoreTraceColors.TextPrimaryLight,
-                modifier = Modifier.size(20.dp),
-            )
+        if (onBack != null) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "返回",
+                    tint = ScoreTraceColors.TextPrimaryLight,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
         }
-        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = title,
             fontSize = 20.sp,

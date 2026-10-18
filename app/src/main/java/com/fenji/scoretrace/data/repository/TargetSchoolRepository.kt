@@ -1,8 +1,12 @@
 package com.fenji.scoretrace.data.repository
 
+import com.fenji.scoretrace.data.local.UserPreferences
 import com.fenji.scoretrace.data.local.dao.TargetSchoolDao
 import com.fenji.scoretrace.data.local.entity.TargetSchool
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,12 +28,16 @@ interface TargetSchoolRepository {
     suspend fun clearAll()
 }
 
+/** 目标院校仓库：读写按「当前登录账号」隔离。 */
+@OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class DefaultTargetSchoolRepository @Inject constructor(
     private val targetSchoolDao: TargetSchoolDao,
+    private val userPreferences: UserPreferences,
 ) : TargetSchoolRepository {
 
-    override fun observeLatest(): Flow<TargetSchool?> = targetSchoolDao.observeLatest()
+    override fun observeLatest(): Flow<TargetSchool?> =
+        userPreferences.authUserId.flatMapLatest { uid -> targetSchoolDao.observeLatest(uid) }
 
     override suspend fun save(
         schoolName: String,
@@ -46,6 +54,7 @@ class DefaultTargetSchoolRepository @Inject constructor(
             targetScore = targetScore,
             currentScore = currentScore,
             year = year,
+            userId = userPreferences.authUserId.first(),
         )
     )
 

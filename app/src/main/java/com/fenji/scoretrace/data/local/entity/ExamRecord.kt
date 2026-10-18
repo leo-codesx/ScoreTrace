@@ -17,4 +17,6 @@ data class ExamRecord(
     val classRank: Int? = null,
     /** 年级排名；null 表示未填写 */
     val gradeRank: Int? = null,
+    /** 归属账号（Authing userId）；null 表示尚未与账号绑定的本机历史数据。 */
+    val userId: String? = null,
 )

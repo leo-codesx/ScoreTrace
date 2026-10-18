@@ -20,19 +20,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,9 +49,12 @@ import com.fenji.scoretrace.util.AppToast
 
 /** 关于 ScoreTrace：Logo + 版本 + 简介 + 检查更新 / 开源许可 / 隐私政策 / 用户协议。 */
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
+fun AboutScreen(
+    onBack: () -> Unit,
+    onOpenPrivacy: () -> Unit = {},
+    onOpenAgreement: () -> Unit = {},
+) {
     var showLicenses by rememberSaveable { mutableStateOf(false) }
-    var legalDoc by remember { mutableStateOf<LegalDoc?>(null) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -105,9 +105,9 @@ fun AboutScreen(onBack: () -> Unit) {
                     AboutDivider()
                     AboutRow("开源许可", "查看使用的第三方开源库") { showLicenses = true }
                     AboutDivider()
-                    AboutRow("隐私政策", "") { legalDoc = PRIVACY_POLICY }
+                    AboutRow("隐私政策", "") { onOpenPrivacy() }
                     AboutDivider()
-                    AboutRow("用户协议", "") { legalDoc = USER_AGREEMENT }
+                    AboutRow("用户协议", "") { onOpenAgreement() }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -125,21 +125,6 @@ fun AboutScreen(onBack: () -> Unit) {
 
     if (showLicenses) {
         OpenSourceLicensesSheet(onDismiss = { showLicenses = false })
-    }
-
-    legalDoc?.let { doc ->
-        AlertDialog(
-            onDismissRequest = { legalDoc = null },
-            title = { Text(doc.title) },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(doc.body, fontSize = 13.sp, color = ScoreTraceColors.TextSecondaryLight, lineHeight = 20.sp)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { legalDoc = null }) { Text("知道了") }
-            },
-        )
     }
 }
 
@@ -222,26 +207,6 @@ private fun AboutDivider() {
     )
 }
 
-private data class LegalDoc(val title: String, val body: String)
-
-private val PRIVACY_POLICY = LegalDoc(
-    title = "隐私政策",
-    body = "ScoreTrace 尊重并保护你的隐私。\n\n" +
-        "1. 成绩、目标院校、选科、昵称、头像等数据仅保存在本机，不会上传到服务器。\n" +
-        "2. 省份通过系统定位（粗定位）获取，仅用于本地展示，不做其他用途。\n" +
-        "3. AI 对话内容会发送至你配置的大模型服务商以生成回复。\n" +
-        "4. 卸载应用或使用「清除全部数据」即可删除本机全部数据。",
-)
-
-private val USER_AGREEMENT = LegalDoc(
-    title = "用户协议",
-    body = "欢迎使用 ScoreTrace。\n\n" +
-        "1. 本应用为高考备考辅助工具，提供的分数线、院校与专业信息仅供参考，请以官方发布为准。\n" +
-        "2. 请合理使用 AI 功能，勿输入违法违规内容。\n" +
-        "3. 应用按现状提供，因使用本应用产生的任何后果由用户自行承担。",
-)
-
-/** 第三方开源库列表。 */
 private data class OpenSourceLibrary(val name: String, val license: String)
 
 private val OPEN_SOURCE_LIBRARIES = listOf(

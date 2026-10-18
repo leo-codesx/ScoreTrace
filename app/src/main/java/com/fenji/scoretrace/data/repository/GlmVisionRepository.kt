@@ -1,6 +1,5 @@
 package com.fenji.scoretrace.data.repository
 
-import android.util.Log
 import com.fenji.scoretrace.data.remote.glm.GlmApiService
 import com.fenji.scoretrace.data.remote.glm.dto.GlmChatRequest
 import com.fenji.scoretrace.data.remote.glm.dto.GlmChatResponse
@@ -131,6 +130,8 @@ class DefaultGlmVisionRepository @Inject constructor(
 
     /** 发一次请求并返回模型的 text 内容；仅对 1305 限流做指数退避重试。 */
     private suspend fun callModel(imageDataUrl: String, prompt: String, maxTokens: Int): Result<String> {
+        // 图片 base64 长度（不含前缀）：过大时 GLM 可能拒收，排查图片压缩问题用
+        AppLogger.i("GlmVision", "request maxTokens=$maxTokens imageDataUrlLen=${imageDataUrl.length}")
         var lastError: Throwable? = null
         repeat(MAX_ATTEMPTS) { attempt ->
             val attemptResult = try {
@@ -150,6 +151,8 @@ class DefaultGlmVisionRepository @Inject constructor(
                 response.error?.let { throw GlmException(it.code, it.message ?: "GLM 返回错误") }
                 val content = response.choices.firstOrNull()?.message?.content
                     ?: throw GlmException(null, "GLM 未返回结果")
+                // 记录原始返回（截断），便于「开发者选项 → 导出日志」排查模型输出格式问题
+                AppLogger.d("GlmVision", "raw len=${content.length} head=${content.take(300)}")
                 Result.success(content)
             } catch (e: HttpException) {
                 Result.failure(toGlmException(e))
@@ -201,7 +204,7 @@ class DefaultGlmVisionRepository @Inject constructor(
     /** 解析 4xx/5xx 的错误响应体为 [GlmException]（含 code/message）。 */
     private fun toGlmException(e: HttpException): GlmException {
         val rawBody = runCatching { e.response()?.errorBody()?.string() }.getOrNull()
-        Log.w(TAG, "GLM HTTP ${e.code()} errorBody=$rawBody")
+        AppLogger.w("GlmVision", "HTTP ${e.code()} errorBody=${rawBody?.take(600)}")
         val error = rawBody
             ?.let { runCatching { gson.fromJson(it, GlmChatResponse::class.java)?.error }.getOrNull() }
         val message = error?.message?.takeIf { it.isNotBlank() } ?: "HTTP ${e.code()}"
@@ -261,7 +264,6 @@ class DefaultGlmVisionRepository @Inject constructor(
     )
 
     private companion object {
-        const val TAG = "GlmVision"
         const val MAX_ATTEMPTS = 3
         const val RETRY_BASE_DELAY_MS = 800L
         const val CODE_RATE_LIMIT = "1305"

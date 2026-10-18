@@ -15,4 +15,6 @@ data class StudySession(
     val durationSeconds: Int,
     /** 计时类型：stopwatch（正计时）/ countdown（倒计时） */
     val type: String,
+    /** 归属账号（Authing userId）；null 表示尚未与账号绑定的本机历史数据。 */
+    val userId: String? = null,
 )

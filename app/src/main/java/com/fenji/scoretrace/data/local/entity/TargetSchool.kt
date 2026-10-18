@@ -15,4 +15,6 @@ data class TargetSchool(
     val targetScore: Int,
     val currentScore: Int,
     val year: Int,
+    /** 归属账号（Authing userId）；null 表示尚未与账号绑定的本机历史数据。 */
+    val userId: String? = null,
 )

@@ -69,10 +69,12 @@ fun MineScreen(
     onOpenAbout: () -> Unit = {},
     onOpenFeedback: () -> Unit = {},
     onOpenAccountSettings: () -> Unit = {},
+    onOpenDeveloperOptions: () -> Unit = {},
     onNavigateHome: () -> Unit = {},
     viewModel: MineViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val displayName by viewModel.displayName.collectAsStateWithLifecycle()
     val maskedPhone by viewModel.maskedPhone.collectAsStateWithLifecycle()
     val provinceStatus by viewModel.provinceStatus.collectAsStateWithLifecycle()
@@ -238,6 +240,20 @@ fun MineScreen(
                     value = "",
                     onClick = onOpenFeedback,
                 )
+            }
+
+            // ── 开发者（仅登录用户可见：无 ADB 时自助导出日志）
+            if (isLoggedIn) {
+                SettingGroupTitle("开发者")
+                SettingGroup {
+                    SettingNavigateItem(
+                        icon = rememberVectorPainter(Icons.Filled.Info),
+                        iconBgColor = GraySlate,
+                        title = "开发者选项",
+                        value = "日志导出 / 状态",
+                        onClick = onOpenDeveloperOptions,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

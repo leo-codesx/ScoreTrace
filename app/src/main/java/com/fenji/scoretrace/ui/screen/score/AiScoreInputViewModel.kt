@@ -122,6 +122,7 @@ class AiScoreInputViewModel @Inject constructor(
                 return@launch
             }
             pendingImageDataUrl = dataUrl
+            AppLogger.i("AiVision", "imageDataUrlLen=${dataUrl.length}")
             _loadingStage.value = "正在判断图片类型…"
             glmVisionRepository.detectSheetType(dataUrl)
                 .onSuccess { auto ->

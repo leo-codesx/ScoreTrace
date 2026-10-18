@@ -33,7 +33,7 @@ import com.fenji.scoretrace.data.local.entity.TargetSchool
         ConversationEntity::class,
         MessageEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

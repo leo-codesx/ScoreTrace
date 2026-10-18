@@ -3,6 +3,7 @@ agp = "9.4.1"
 kotlin = "2.3.20"
 ksp = "2.3.12"
 coreKtx = "1.19.1"
+coreSplashscreen = "1.0.1"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
 composeBom = "2026.09.00"
@@ -25,6 +26,7 @@ authing = "1.5.8"
 [libraries]
 # AndroidX 基础
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }

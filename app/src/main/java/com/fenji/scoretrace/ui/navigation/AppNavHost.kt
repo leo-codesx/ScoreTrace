@@ -19,7 +19,10 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,10 +52,13 @@ import com.fenji.scoretrace.ui.screen.ai.AiHistoryScreen
 import com.fenji.scoretrace.ui.screen.ai.AiScreen
 import com.fenji.scoretrace.ui.screen.auth.LoginScreen
 import com.fenji.scoretrace.ui.screen.auth.AuthViewModel
+import com.fenji.scoretrace.ui.screen.auth.DataMigrationViewModel
 import com.fenji.scoretrace.ui.screen.home.HomeScreen
 import com.fenji.scoretrace.ui.screen.mine.AboutScreen
 import com.fenji.scoretrace.ui.screen.mine.AccountSettingsScreen
+import com.fenji.scoretrace.ui.screen.mine.DeveloperOptionsScreen
 import com.fenji.scoretrace.ui.screen.mine.FeedbackScreen
+import com.fenji.scoretrace.ui.screen.mine.LegalDocumentScreen
 import com.fenji.scoretrace.ui.screen.mine.MineScreen
 import com.fenji.scoretrace.ui.screen.notification.NotificationScreen
 import com.fenji.scoretrace.ui.screen.school.TargetSchoolScreen
@@ -84,6 +90,8 @@ fun AppNavHost(
     // 强制登录：起始页由「同步读到的登录态」决定（AuthViewModel 初值即同步），
     // 已登录进首页、未登录进登录页；避免已登录用户首帧闪一下登录页。
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
+    val migrationViewModel: DataMigrationViewModel = hiltViewModel()
+    val migrationState by migrationViewModel.state.collectAsStateWithLifecycle()
     val startDestination = remember { if (authState.isLoggedIn) Screen.Home.route else Screen.Login.route }
     // 键盘弹出时隐藏底栏，让 AI 输入框紧贴键盘（配合 AiScreen 的 imePadding）
     val imeVisible = WindowInsets.isImeVisible
@@ -104,9 +112,17 @@ fun AppNavHost(
         currentRoute == Screen.Feedback.route ||
         currentRoute == Screen.Login.route ||
         currentRoute == Screen.AccountSettings.route ||
+        currentRoute == Screen.PrivacyPolicy.route ||
+        currentRoute == Screen.UserAgreement.route ||
+        currentRoute == Screen.DeveloperOptions.route ||
         (currentRoute == Screen.AI.route && imeVisible)
 
     LaunchedEffect(hideBottomBar) { onBottomBarVisibleChange(!hideBottomBar) }
+
+    // 首次登录成功后检测本机未绑定账号的数据，弹窗询问是否迁移。
+    LaunchedEffect(authState.isLoggedIn) {
+        if (authState.isLoggedIn) migrationViewModel.checkOnce()
+    }
 
     // 登录态运行时切换（登录成功 / 退出登录）：送到对应页面并清空返回栈，防止按返回键退回上一态。
     // 首次组合时 startDestination 已经正确，故跳过第一轮（此时路由可能还没 settle）。
@@ -295,6 +311,7 @@ fun AppNavHost(
                     onOpenAbout = { navController.navigate(Screen.About.route) },
                     onOpenFeedback = { navController.navigate(Screen.Feedback.route) },
                     onOpenAccountSettings = { navController.navigate(Screen.AccountSettings.route) },
+                    onOpenDeveloperOptions = { navController.navigate(Screen.DeveloperOptions.route) },
                     onNavigateHome = { navController.navigateToTab(Screen.Home) },
                 )
             }
@@ -361,7 +378,28 @@ fun AppNavHost(
                 )
             }
             composable(Screen.About.route) {
-                AboutScreen(onBack = { navController.popBackStack() })
+                AboutScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPrivacy = { navController.navigate(Screen.PrivacyPolicy.route) },
+                    onOpenAgreement = { navController.navigate(Screen.UserAgreement.route) },
+                )
+            }
+            composable(Screen.PrivacyPolicy.route) {
+                LegalDocumentScreen(
+                    title = "隐私政策",
+                    assetName = "privacy.md",
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Screen.UserAgreement.route) {
+                LegalDocumentScreen(
+                    title = "用户协议",
+                    assetName = "agreement.md",
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Screen.DeveloperOptions.route) {
+                DeveloperOptionsScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.Feedback.route) {
                 FeedbackScreen(onBack = { navController.popBackStack() })
@@ -370,6 +408,8 @@ fun AppNavHost(
                 LoginScreen(
                     // 未登录时登录页是唯一页，没有可返回的上一页 → 再按一次退出应用
                     onBack = { if (!navController.popBackStack()) (context as? Activity)?.finish() },
+                    onOpenPrivacy = { navController.navigate(Screen.PrivacyPolicy.route) },
+                    onOpenAgreement = { navController.navigate(Screen.UserAgreement.route) },
                 )
             }
             composable(Screen.AccountSettings.route) {
@@ -377,6 +417,30 @@ fun AppNavHost(
                 AccountSettingsScreen(onBack = { navController.popBackStack() })
             }
         }
+    }
+
+    if (migrationState.visible) {
+        val data = migrationState.data
+        AlertDialog(
+            onDismissRequest = { migrationViewModel.dismiss() },
+            title = { Text("迁移本地数据？") },
+            text = {
+                Text(
+                    "检测到你之前记录了 ${data.scoreRecords} 条成绩、${data.targetSchools} 个学习目标" +
+                        (if (data.studySessions > 0) "、${data.studySessions} 条专注记录" else "") +
+                        "。是否将它们绑定到当前账号？",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !migrationState.claiming,
+                    onClick = { migrationViewModel.migrate() },
+                ) { Text("迁移") }
+            },
+            dismissButton = {
+                TextButton(onClick = { migrationViewModel.dismiss() }) { Text("暂不迁移") }
+            },
+        )
     }
 }
 

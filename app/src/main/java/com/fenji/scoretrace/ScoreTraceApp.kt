@@ -5,6 +5,7 @@ import android.app.Application
 import android.os.Bundle
 import cn.authing.guard.Authing
 import com.fenji.scoretrace.data.player.MusicPlayerManager
+import com.fenji.scoretrace.util.CrashHandler
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -20,6 +21,9 @@ class ScoreTraceApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // 崩溃上报（自研）：把未捕获异常堆栈落到 app 私有目录 crash/，下次启动时提示上报。
+        Thread.setDefaultUncaughtExceptionHandler(CrashHandler(this))
 
         // Authing 全局初始化：只做一次。默认协议是私有化部署的 EInHouse，SaaS 应用须显式改为 EOIDC。
         // 不调用 Authing.setHost()——SDK 默认 host=authing.cn，public-config 走 console.authing.cn，

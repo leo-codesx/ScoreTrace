@@ -20,3 +20,28 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn javax.annotation.**
+
+# Authing Guard SDK 内置了大量「可选」社交登录 / 推送 handler（微信、QQ、微博、
+# Facebook、Google、华为、小米、快手、LINE、支付宝等），但本应用只用了账号密码/验证码，
+# 这些第三方 SDK 均未作为依赖引入。R8 全模式下「Missing classes」会直接判定构建失败
+# （并非仅告警），故对这批未接入的可选 SDK 包统一 -dontwarn；它们只要不被实际调用即无影响。
+-dontwarn android.hardware.fingerprint.**
+-dontwarn cn.authing.webauthn.**
+-dontwarn com.alipay.**
+-dontwarn com.amazon.**
+-dontwarn com.android.dingtalk.**
+-dontwarn com.baidu.**
+-dontwarn com.bytedance.**
+-dontwarn com.facebook.**
+-dontwarn com.google.android.gms.**
+-dontwarn com.heytap.**
+-dontwarn com.huawei.**
+-dontwarn com.igexin.**
+-dontwarn com.kwai.**
+-dontwarn com.linecorp.**
+-dontwarn com.netease.**
+-dontwarn com.sina.**
+-dontwarn com.ss.android.**
+-dontwarn com.tencent.**
+-dontwarn com.twitter.**
+-dontwarn com.xiaomi.**

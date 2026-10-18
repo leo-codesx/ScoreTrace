@@ -89,6 +89,7 @@ fun HomeScreen(
     val greeting by viewModel.greeting.collectAsStateWithLifecycle()
     val unreadCount by viewModel.unreadCount.collectAsStateWithLifecycle()
     val yearPassedPercent by viewModel.yearPassedPercent.collectAsStateWithLifecycle()
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
 
     var showTargetDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var showPlaylist by rememberSaveable { mutableStateOf(false) }
@@ -147,6 +148,7 @@ fun HomeScreen(
         subjectRates = subjectRates,
         aiFocus = aiFocus,
         unreadCount = unreadCount,
+        isOnline = isOnline,
         yearPassedPercent = yearPassedPercent,
         bottomContentPadding = bottomContentPadding,
         showMusicPanel = showMusicPanel,
@@ -274,6 +276,7 @@ private fun HomeScreenContent(
     subjectRates: List<SubjectScore>,
     aiFocus: String,
     unreadCount: Int,
+    isOnline: Boolean,
     yearPassedPercent: Int,
     bottomContentPadding: Dp,
     showMusicPanel: Boolean,
@@ -299,6 +302,7 @@ private fun HomeScreenContent(
             subtitle = "$greeting，备考第 $studyDay 天",
             isMusicPlaying = isPlaying,
             unreadCount = unreadCount,
+            isOnline = isOnline,
             onMusicClick = onMusicClick,
             onNotificationClick = onNotificationClick,
         )

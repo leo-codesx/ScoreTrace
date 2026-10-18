@@ -4,6 +4,7 @@ import com.fenji.scoretrace.data.repository.DefaultConversationRepository
 import com.fenji.scoretrace.data.repository.DefaultAuthRepository
 import com.fenji.scoretrace.data.repository.DefaultExamRecordRepository
 import com.fenji.scoretrace.data.repository.DefaultGlmVisionRepository
+import com.fenji.scoretrace.data.repository.DefaultLocalDataMigrationRepository
 import com.fenji.scoretrace.data.repository.DefaultMajorRepository
 import com.fenji.scoretrace.data.repository.DefaultNetworkRepository
 import com.fenji.scoretrace.data.repository.DefaultNotificationRepository
@@ -19,6 +20,7 @@ import com.fenji.scoretrace.data.repository.ConversationRepository
 import com.fenji.scoretrace.data.repository.AuthRepository
 import com.fenji.scoretrace.data.repository.ExamRecordRepository
 import com.fenji.scoretrace.data.repository.GlmVisionRepository
+import com.fenji.scoretrace.data.repository.LocalDataMigrationRepository
 import com.fenji.scoretrace.data.repository.MajorRepository
 import com.fenji.scoretrace.data.repository.NetworkRepository
 import com.fenji.scoretrace.data.repository.NotificationRepository
@@ -83,4 +85,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindAuthRepository(impl: DefaultAuthRepository): AuthRepository
+
+    @Binds
+    abstract fun bindLocalDataMigrationRepository(
+        impl: DefaultLocalDataMigrationRepository,
+    ): LocalDataMigrationRepository
 }

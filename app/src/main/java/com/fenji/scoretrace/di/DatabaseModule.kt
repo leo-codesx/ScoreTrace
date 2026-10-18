@@ -126,6 +126,20 @@ object DatabaseModule {
         }
     }
 
+    /**
+     * 成绩 / 目标院校 / 专注计时 / 考试记录表新增 userId 列（可空）：
+     * 用于把本机历史数据与登录账号绑定，并在多账号切换时做数据隔离。
+     * `ADD COLUMN` 加可空列无需 DEFAULT，存量行保持 NULL（表示「未认领」，由登录后的迁移对话框处理）。
+     */
+    private val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `score_records` ADD COLUMN `userId` TEXT")
+            db.execSQL("ALTER TABLE `target_schools` ADD COLUMN `userId` TEXT")
+            db.execSQL("ALTER TABLE `study_sessions` ADD COLUMN `userId` TEXT")
+            db.execSQL("ALTER TABLE `exam_records` ADD COLUMN `userId` TEXT")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ScoreTraceDatabase =
@@ -137,6 +151,7 @@ object DatabaseModule {
                 MIGRATION_4_5,
                 MIGRATION_5_6,
                 MIGRATION_6_7,
+                MIGRATION_7_8,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {

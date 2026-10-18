@@ -9,4 +9,15 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">@color/window_background</item>
     </style>
+
+    <!--
+      启动画面（Android 12+ SplashScreen API，由 core-splashscreen 向后兼容到 API 24+）。
+      背景为品牌蓝；居中图标复用自适应图标前景（本身即 #4A90E2→#2ECC71 渐变 Logo），
+      系统在启动时自动做「淡入 + 缩放」过渡。系统 Splash 结束后切到 postSplashScreenTheme。
+    -->
+    <style name="Theme.ScoreTrace.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.ScoreTrace</item>
+    </style>
 </resources>

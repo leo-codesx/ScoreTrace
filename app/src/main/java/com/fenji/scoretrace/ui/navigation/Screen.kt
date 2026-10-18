@@ -48,6 +48,15 @@ sealed class Screen(val route: String) {
     /** 账号设置：已登录时从「我的」页账号卡进入，全屏页 */
     data object AccountSettings : Screen("auth/account_settings")
 
+    /** 隐私政策：从「关于」页或登录页进入，全屏页 */
+    data object PrivacyPolicy : Screen("legal/privacy")
+
+    /** 用户协议：从「关于」页或登录页进入，全屏页 */
+    data object UserAgreement : Screen("legal/agreement")
+
+    /** 开发者选项：从「我的」页底部进入（仅登录用户可见），全屏页 */
+    data object DeveloperOptions : Screen("developer_options")
+
     /** 成绩详情：从成绩页历史记录进入，携带考试 ID */
     data class ScoreDetail(val examId: Long) : Screen(ROUTE) {
         companion object {

@@ -6,11 +6,18 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!--
+      android:enableOnBackInvokedCallback="false"：关闭 Android 16(targetSdk 36+) 默认开启的
+      预测性返回系统动画。该动画在返回手势时会把手势页面缩成圆角卡片（back-to-home 观感），
+      与本应用「Tab 淡入淡出 / 二级页水平滑动」的过渡设计冲突。关闭后返回手势不再叠加系统缩放，
+      仅执行应用自身的 NavHost 过渡。
+    -->
     <application
         android:name=".ScoreTraceApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
+        android:enableOnBackInvokedCallback="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -22,7 +29,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.ScoreTrace"
+            android:theme="@style/Theme.ScoreTrace.Splash"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
