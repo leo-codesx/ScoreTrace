@@ -40,6 +40,12 @@ sealed class Screen(val route: String) {
     /** 新高考赋分工具：从工具页进入，全屏页 */
     data object ScoreConvert : Screen("score_convert")
 
+    /** 一分一段查询：从工具页进入，全屏页 */
+    data object ScoreSection : Screen("score_section")
+
+    /** 选专业：从工具页进入，全屏页 */
+    data object MajorExplorer : Screen("major_explorer")
+
     /** AI 历史对话：从 AI 助手页进入，全屏页 */
     data object AiHistory : Screen("ai_history")
 

@@ -1,6 +1,8 @@
 package com.fenji.scoretrace.data.player
 
 import android.content.Context
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,6 +24,7 @@ class MusicCacheRepository @Inject constructor(
     @ApplicationContext context: Context,
 ) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val gson = Gson()
 
     fun save(songId: String, positionMs: Long) {
         prefs.edit()
@@ -39,9 +42,26 @@ class MusicCacheRepository @Inject constructor(
         )
     }
 
+    /** 读取上次缓存的在线歌单；无缓存或解析失败返回 null。 */
+    fun loadPlaylist(): List<TrackInfo>? {
+        val json = prefs.getString(KEY_PLAYLIST, null) ?: return null
+        return runCatching {
+            val type = object : TypeToken<List<TrackInfo>>() {}.type
+            gson.fromJson<List<TrackInfo>>(json, type)?.takeIf { it.isNotEmpty() }
+        }.getOrNull()
+    }
+
+    /** 缓存在线歌单，供下次启动立即使用。 */
+    fun savePlaylist(tracks: List<TrackInfo>) {
+        runCatching {
+            prefs.edit().putString(KEY_PLAYLIST, gson.toJson(tracks)).apply()
+        }
+    }
+
     private companion object {
         const val PREFS_NAME = "music_cache"
         const val KEY_SONG_ID = "last_song_id"
         const val KEY_POSITION = "last_position"
+        const val KEY_PLAYLIST = "cached_playlist"
     }
 }

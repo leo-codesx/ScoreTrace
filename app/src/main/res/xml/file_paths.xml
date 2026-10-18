@@ -2,6 +2,4 @@
 <paths>
     <!-- 拍照识分：相机写入缓存目录的临时图片 -->
     <cache-path name="score_sheets" path="." />
-    <!-- 云更新：下载到应用外部私有目录的 APK，供 FileProvider 安装 -->
-    <external-files-path name="updates" path="ScoreTrace/" />
 </paths>

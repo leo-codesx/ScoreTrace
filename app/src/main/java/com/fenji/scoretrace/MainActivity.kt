@@ -30,7 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.fenji.scoretrace.data.local.UserPreferences
 import com.fenji.scoretrace.ui.component.AppToastHost
-import com.fenji.scoretrace.ui.component.RemoteDialogHost
+import com.fenji.scoretrace.ui.component.ForcedUpdateDialogHost
 import com.fenji.scoretrace.ui.navigation.AppNavHost
 import com.fenji.scoretrace.ui.screen.splash.SplashScreen
 import com.fenji.scoretrace.ui.theme.ScoreTraceTheme
@@ -108,7 +108,7 @@ class MainActivity : ComponentActivity() {
                             bottomPadding = if (bottomBarVisible) 72.dp else 16.dp,
                             modifier = Modifier.align(Alignment.BottomCenter),
                         )
-                        RemoteDialogHost()
+                        ForcedUpdateDialogHost()
                         AnimatedVisibility(
                             visible = showSplash,
                             enter = fadeIn(animationSpec = tween(durationMillis = 0)),

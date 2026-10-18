@@ -207,27 +207,4 @@ object NetworkModule {
     fun provideMusicApiService(
         @Named("music") retrofit: Retrofit,
     ): MusicApiService = retrofit.create(MusicApiService::class.java)
-
-    /** 远程公告/更新检查专用：3 秒总时限，失败静默跳过，绝不阻塞启动。 */
-    @Provides
-    @Singleton
-    @Named("config")
-    fun provideConfigOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(3, TimeUnit.SECONDS)
-        .readTimeout(3, TimeUnit.SECONDS)
-        .writeTimeout(3, TimeUnit.SECONDS)
-        .callTimeout(3, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
-        .build()
-
-    /** 云更新下载专用：无 BODY 日志、无整体 callTimeout，避免大文件被 12s 总时限截断。 */
-    @Provides
-    @Singleton
-    @Named("download")
-    fun provideDownloadOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
-        .build()
 }

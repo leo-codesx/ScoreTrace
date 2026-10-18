@@ -46,6 +46,8 @@ import com.fenji.scoretrace.util.AppToast
 @Composable
 fun ToolsScreen(
     onOpenScoreConvert: () -> Unit,
+    onOpenScoreSection: () -> Unit,
+    onOpenMajorExplorer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -85,11 +87,28 @@ fun ToolsScreen(
 
                 Spacer(modifier = Modifier.height(Dimensions.SpacingSmall))
                 Text(
-                    text = "学习工具",
+                    text = "高考工具",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = ScoreTraceColors.TextPrimaryLight,
                     modifier = Modifier.padding(start = Dimensions.SpacingXSmall),
+                )
+
+                ToolRow(
+                    icon = painterResource(R.drawable.ic_bar_chart),
+                    tint = ScoreTraceColors.BrandPrimary,
+                    title = "一分一段",
+                    subtitle = "输入分数查询本段人数与位次",
+                    badge = "查询",
+                    onClick = onOpenScoreSection,
+                )
+                ToolRow(
+                    icon = painterResource(R.drawable.ic_school),
+                    tint = ScoreTraceColors.BrandPrimary,
+                    title = "选专业",
+                    subtitle = "按 3+1+2 选科组合筛选可报专业",
+                    badge = "查询",
+                    onClick = onOpenMajorExplorer,
                 )
 
                 ToolRow(

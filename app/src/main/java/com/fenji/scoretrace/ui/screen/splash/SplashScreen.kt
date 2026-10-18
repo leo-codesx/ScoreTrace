@@ -132,7 +132,7 @@ fun SplashScreen(
         initialValue = 0.97f,
         targetValue = 1.03f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2200),
+            animation = tween(durationMillis = 3300),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "breathScale",
@@ -141,7 +141,7 @@ fun SplashScreen(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 7000, easing = LinearEasing),
+            animation = tween(durationMillis = 10500, easing = LinearEasing),
         ),
         label = "particleProgress",
     )
@@ -161,7 +161,7 @@ fun SplashScreen(
     }
 
     LaunchedEffect(Unit) {
-        launch { appear.animateTo(1f, tween(durationMillis = 500)) }
+        launch { appear.animateTo(1f, tween(durationMillis = 750)) }
         launch {
             logoScale.animateTo(
                 targetValue = 1f,
@@ -172,14 +172,14 @@ fun SplashScreen(
             )
         }
         launch {
-            sloganProgress.animateTo(1f, tween(durationMillis = 700, delayMillis = 120))
+            sloganProgress.animateTo(1f, tween(durationMillis = 1050, delayMillis = 180))
         }
         launch {
             countProgress.animateTo(
                 targetValue = days,
                 animationSpec = tween(
-                    durationMillis = 1400,
-                    delayMillis = 350,
+                    durationMillis = 2100,
+                    delayMillis = 525,
                     easing = FastOutSlowInEasing,
                 ),
             )
@@ -188,7 +188,7 @@ fun SplashScreen(
 
     // 自动结束；点「跳过」时由 onFinished 提前关闭，重复调用是幂等的。
     LaunchedEffect(Unit) {
-        delay(2300)
+        delay(3500)
         onFinished()
     }
 

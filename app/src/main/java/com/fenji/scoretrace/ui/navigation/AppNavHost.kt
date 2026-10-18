@@ -67,7 +67,9 @@ import com.fenji.scoretrace.ui.screen.score.ManualScoreInputScreen
 import com.fenji.scoretrace.ui.screen.score.ScoreDetailScreen
 import com.fenji.scoretrace.ui.screen.score.ScoreScreenNew
 import com.fenji.scoretrace.ui.screen.subject.SubjectConfigScreen
+import com.fenji.scoretrace.ui.screen.tools.MajorExplorerScreen
 import com.fenji.scoretrace.ui.screen.tools.ScoreConvertScreen
+import com.fenji.scoretrace.ui.screen.tools.ScoreSectionScreen
 import com.fenji.scoretrace.ui.screen.tools.ToolsScreen
 import com.fenji.scoretrace.util.AppToast
 
@@ -109,6 +111,8 @@ fun AppNavHost(
         currentRoute?.startsWith("notification_detail") == true ||
         currentRoute == Screen.SubjectConfig.route ||
         currentRoute == Screen.ScoreConvert.route ||
+        currentRoute == Screen.ScoreSection.route ||
+        currentRoute == Screen.MajorExplorer.route ||
         currentRoute == Screen.AiHistory.route ||
         currentRoute == Screen.About.route ||
         currentRoute == Screen.Feedback.route ||
@@ -296,6 +300,8 @@ fun AppNavHost(
             ) {
                 ToolsScreen(
                     onOpenScoreConvert = { navController.navigate(Screen.ScoreConvert.route) },
+                    onOpenScoreSection = { navController.navigate(Screen.ScoreSection.route) },
+                    onOpenMajorExplorer = { navController.navigate(Screen.MajorExplorer.route) },
                 )
             }
             composable(
@@ -385,6 +391,12 @@ fun AppNavHost(
             }
             composable(Screen.ScoreConvert.route) {
                 ScoreConvertScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Screen.ScoreSection.route) {
+                ScoreSectionScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Screen.MajorExplorer.route) {
+                MajorExplorerScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.AiHistory.route) {
                 AiHistoryScreen(

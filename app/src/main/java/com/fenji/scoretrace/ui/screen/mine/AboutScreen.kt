@@ -1,5 +1,7 @@
 package com.fenji.scoretrace.ui.screen.mine
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -20,15 +22,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,18 +38,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fenji.scoretrace.BuildConfig
 import com.fenji.scoretrace.R
 import com.fenji.scoretrace.ui.theme.ScoreTraceColors
-import com.fenji.scoretrace.util.AppToast
+import com.fenji.scoretrace.util.AppUpdateInfo
 
 /** 关于 ScoreTrace：Logo + 版本 + 简介 + 检查更新 / 开源许可 / 隐私政策 / 用户协议。 */
 @Composable
@@ -58,10 +56,9 @@ fun AboutScreen(
     onBack: () -> Unit,
     onOpenPrivacy: () -> Unit = {},
     onOpenAgreement: () -> Unit = {},
-    updateViewModel: UpdateViewModel = hiltViewModel(),
 ) {
     var showLicenses by rememberSaveable { mutableStateOf(false) }
-    val updateState by updateViewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -108,14 +105,13 @@ fun AboutScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 AboutGroup {
-                    val available = updateState.available
-                    val updateSubtitle = when {
-                        updateState.checking -> "检查中…"
-                        updateState.downloadedFile != null -> "下载完成，点击安装"
-                        available != null -> "发现 v${available.versionName}"
-                        else -> "当前已是最新版本"
+                    AboutRow("前往蓝奏云", "密码 ${AppUpdateInfo.DOWNLOAD_PASSWORD}") {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(AppUpdateInfo.DOWNLOAD_WEB_URL)),
+                            )
+                        }
                     }
-                    AboutRow("检查更新", updateSubtitle) { updateViewModel.check() }
                     AboutDivider()
                     AboutRow("开源许可", "查看使用的第三方开源库") { showLicenses = true }
                     AboutDivider()
@@ -139,50 +135,6 @@ fun AboutScreen(
 
     if (showLicenses) {
         OpenSourceLicensesSheet(onDismiss = { showLicenses = false })
-    }
-
-    val update = updateState.available
-    if (updateState.showDialog && update != null) {
-        AlertDialog(
-            onDismissRequest = updateViewModel::dismissDialog,
-            title = { Text("发现新版本 v${update.versionName}") },
-            text = {
-                Column {
-                    if (update.changelog.isNotBlank()) {
-                        Text(update.changelog, fontSize = 14.sp, lineHeight = 21.sp)
-                    }
-                    if (updateState.downloading) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LinearProgressIndicator(
-                            progress = { updateState.progress / 100f },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text("正在下载 ${updateState.progress}%", fontSize = 12.sp)
-                    } else if (updateState.downloadedFile != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text("下载完成，点击下方按钮安装。", fontSize = 13.sp)
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = !updateState.downloading,
-                    onClick = {
-                        if (updateState.downloadedFile != null) {
-                            updateViewModel.install()
-                        } else {
-                            updateViewModel.download()
-                        }
-                    },
-                ) {
-                    Text(if (updateState.downloadedFile != null) "安装" else "下载更新")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = updateViewModel::dismissDialog) { Text("以后再说") }
-            },
-        )
     }
 }
 

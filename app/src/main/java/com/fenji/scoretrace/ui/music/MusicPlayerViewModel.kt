@@ -13,9 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 /** 循环模式的 UI 三态：关闭 / 列表循环 / 单曲循环。 */
@@ -123,11 +121,8 @@ class MusicPlayerViewModel @Inject constructor(
         if (autoPlayHandled) return
         autoPlayHandled = true
         if (!enabled) return
-        viewModelScope.launch {
-            // 短暂等待在线歌单（最多 3s）；超时或失败时直接用当前静态列表播放。
-            withTimeoutOrNull(3_000L) { playerManager.playlistReady.first { it } }
-            if (!player.isPlaying) play()
-        }
+        // 本地缓存/静态歌单已在 init 时立即就绪，不再等待在线歌单。
+        if (!player.isPlaying) play()
     }
 
     fun play() {

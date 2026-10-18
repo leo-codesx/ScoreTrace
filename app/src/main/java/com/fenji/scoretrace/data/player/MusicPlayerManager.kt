@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File
@@ -82,7 +83,7 @@ class MusicPlayerManager @Inject constructor(
     private var _audioCache: Cache? = null
 
     /** 当前播放列表（可增删）；与播放器的 media items 保持一致 */
-    private val _playlist = MutableStateFlow(DEFAULT_PLAYLIST)
+    private val _playlist = MutableStateFlow(musicCache.loadPlaylist() ?: DEFAULT_PLAYLIST)
     val playlist: StateFlow<List<TrackInfo>> = _playlist.asStateFlow()
 
     val exoPlayer: ExoPlayer
@@ -138,19 +139,23 @@ class MusicPlayerManager @Inject constructor(
     fun loadRemotePlaylistOnce() {
         if (remotePlaylistJob != null || _playlistReady.value) return
         remotePlaylistJob = scope.launch {
-            val tracks = runCatching { musicRepository.fetchDefaultPlaylist() }
-                .onFailure { AppLogger.w(TAG, "在线歌单加载异常：${it.message}") }
-                .getOrDefault(emptyList())
+            val tracks = withTimeoutOrNull(8_000L) {
+                musicRepository.fetchDefaultPlaylist()
+            }.orEmpty()
+            // 只缓存真正的在线歌单，避免接口失败时用静态列表覆盖上一轮缓存。
+            if (tracks.isNotEmpty() && tracks != DEFAULT_PLAYLIST) {
+                musicCache.savePlaylist(tracks)
+            }
             // ExoPlayer 必须在创建它的主线程访问，不能在 IO 协程里 setMediaItems/prepare。
             withContext(Dispatchers.Main.immediate) {
                 runCatching {
                     if (tracks.isNotEmpty()) {
-                        _playlist.value = tracks
-                        _exoPlayer?.let { player ->
-                            if (!player.isPlaying) {
-                                player.setMediaItems(tracks.map { MediaItem.fromUri(it.url) }, 0, 0L)
-                                player.prepare()
-                            }
+                        val player = _exoPlayer
+                        // 正在播放时只更新缓存，不替换队列，避免打断当前播放。
+                        if (player == null || !player.isPlaying) {
+                            _playlist.value = tracks
+                            player?.setMediaItems(tracks.map { MediaItem.fromUri(it.url) }, 0, 0L)
+                            player?.prepare()
                         }
                     }
                 }.onFailure { AppLogger.e(TAG, "应用在线歌单失败", it) }

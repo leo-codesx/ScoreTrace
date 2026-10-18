@@ -59,12 +59,13 @@ fun ScoreConvertScreen(
     viewModel: ScoreConvertViewModel = hiltViewModel(),
 ) {
     val province by viewModel.province.collectAsStateWithLifecycle()
-    val supported = viewModel.isSupported(province)
+    val sectionData by viewModel.sectionData.collectAsStateWithLifecycle()
 
     var subject by rememberSaveable { mutableStateOf(ElectiveSubjects.first()) }
     var rawScore by rememberSaveable { mutableStateOf("") }
     var percentile by rememberSaveable { mutableStateOf("") }
     var result by remember { mutableStateOf<ConvertResult?>(null) }
+    val dataAvailable = province.startsWith("云南") && sectionData?.tableForSubject(subject) != null
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -84,7 +85,22 @@ fun ScoreConvertScreen(
             ) {
                 ProvinceCard(province = province)
 
-                if (!supported) {
+                if (dataAvailable) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(ContainerShape)
+                            .background(ScoreTraceColors.SuccessGreen.copy(alpha = 0.10f))
+                            .padding(Dimensions.SpacingMedium),
+                    ) {
+                        Text(
+                            text = "已加载 2026 云南「$subject」一分一段表，将根据原始分自动计算排名百分比与赋分。",
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
+                            color = ScoreTraceColors.SuccessGreen,
+                        )
+                    }
+                } else {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -93,9 +109,9 @@ fun ScoreConvertScreen(
                             .padding(Dimensions.SpacingMedium),
                     ) {
                         Text(
-                            text = "暂不支持「$province」的赋分规则。当前版本仅支持云南 3+1+2 再选科目规则。",
-                            fontSize = 13.sp,
-                            lineHeight = 19.sp,
+                            text = "该省份/科目暂无一分一段数据，将使用「原始分 + 手动排名百分比」的估算模式。",
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
                             color = ScoreTraceColors.WarningOrange,
                         )
                     }
@@ -156,23 +172,26 @@ fun ScoreConvertScreen(
                     colors = convertFieldColors(),
                 )
 
-                OutlinedTextField(
-                    value = percentile,
-                    onValueChange = { input ->
-                        percentile = input.filter { it.isDigit() || it == '.' }.take(5)
-                        result = null
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("该科预估排名百分比（0-100）") },
-                    placeholder = { Text("例如 12.5，表示前 12.5%") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(Dimensions.CornerSmall),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    colors = convertFieldColors(),
-                )
+                if (!dataAvailable) {
+                    OutlinedTextField(
+                        value = percentile,
+                        onValueChange = { input ->
+                            percentile = input.filter { it.isDigit() || it == '.' }.take(5)
+                            result = null
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("该科预估排名百分比（0-100）") },
+                        placeholder = { Text("例如 12.5，表示前 12.5%") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(Dimensions.CornerSmall),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        colors = convertFieldColors(),
+                    )
+                }
 
                 Text(
-                    text = "云南等级比例：A 17% · B 33% · C 33% · D 16% · E 1%；等级分区间：A 86-100 · B 71-85 · C 56-70 · D 41-55 · E 30-40。",
+                    text = "等级比例：A 15% · B 35% · C 35% · D 13% · E 2%；等级分区间：A 86-100 · B 71-85 · C 56-70 · D 41-55 · E 30-40。" +
+                        "云南使用 2026 一分一段占位数据，结果仅供参考。",
                     fontSize = 12.sp,
                     lineHeight = 18.sp,
                     color = ScoreTraceColors.TextTertiaryLight,
@@ -180,19 +199,25 @@ fun ScoreConvertScreen(
 
                 AuthGradientButton(
                     text = "计算赋分",
-                    enabled = supported,
+                    enabled = true,
                     loading = false,
                     onClick = {
-                        val calculated = viewModel.calculate(subject, rawScore, percentile, province)
-                        if (calculated == null) {
-                            AppToast.warning("请输入 0-100 的原始分和排名百分比")
-                        } else {
-                            result = calculated
+                        when {
+                            rawScore.isBlank() -> AppToast.warning("请输入 0-100 的原始分")
+                            !dataAvailable && percentile.isBlank() -> AppToast.warning("请输入排名百分比（0-100）")
+                            else -> {
+                                val calculated = viewModel.calculate(subject, rawScore, percentile, province)
+                                if (calculated == null) {
+                                    AppToast.warning("输入不合法，或该分数不在数据范围内")
+                                } else {
+                                    result = calculated
+                                }
+                            }
                         }
                     },
                 )
 
-                result?.takeIf { it.supported }?.let { ConvertResultCard(it) }
+                result?.let { ConvertResultCard(it) }
 
                 Text(
                     text = "估算模式 · 结果仅供参考，实际等级分以省考试院公布为准。",
@@ -334,10 +359,17 @@ private fun ConvertResultCard(result: ConvertResult) {
         }
 
         Text(
-            text = "原始分 ${result.rawScore} · 预估排名前 ${String.format("%.1f", result.percentile)}%",
+            text = "原始分 ${result.rawScore} · 预估排名前 ${String.format("%.1f", result.percentile)}% · ${result.source}",
             fontSize = 13.sp,
             color = ScoreTraceColors.TextSecondaryLight,
         )
+        if (result.cumulative != null && result.total != null) {
+            Text(
+                text = "累计人数 ${result.cumulative} / 总人数 ${result.total}",
+                fontSize = 12.sp,
+                color = ScoreTraceColors.TextTertiaryLight,
+            )
+        }
         Text(
             text = "按等级 ${result.grade.label}（${result.grade.t1}-${result.grade.t2} 分）等比例转换",
             fontSize = 12.sp,

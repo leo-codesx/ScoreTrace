@@ -13,7 +13,7 @@ import com.fenji.scoretrace.data.repository.DefaultSchoolRepository
 import com.fenji.scoretrace.data.repository.DefaultSchoolAdmissionRepository
 import com.fenji.scoretrace.data.repository.DefaultScoreRecordRepository
 import com.fenji.scoretrace.data.repository.DefaultProvinceScoreRepository
-import com.fenji.scoretrace.data.repository.DefaultRemoteConfigRepository
+import com.fenji.scoretrace.data.repository.DefaultScoreSectionRepository
 import com.fenji.scoretrace.data.repository.DefaultStudyTaskRepository
 import com.fenji.scoretrace.data.repository.DefaultSubjectRepository
 import com.fenji.scoretrace.data.repository.DefaultTargetSchoolRepository
@@ -30,7 +30,7 @@ import com.fenji.scoretrace.data.repository.SchoolRepository
 import com.fenji.scoretrace.data.repository.SchoolAdmissionRepository
 import com.fenji.scoretrace.data.repository.ScoreRecordRepository
 import com.fenji.scoretrace.data.repository.ProvinceScoreRepository
-import com.fenji.scoretrace.data.repository.RemoteConfigRepository
+import com.fenji.scoretrace.data.repository.ScoreSectionRepository
 import com.fenji.scoretrace.data.repository.StudyTaskRepository
 import com.fenji.scoretrace.data.repository.SubjectRepository
 import com.fenji.scoretrace.data.repository.TargetSchoolRepository
@@ -86,7 +86,7 @@ abstract class RepositoryModule {
     abstract fun bindMusicRepository(impl: DefaultMusicRepository): MusicRepository
 
     @Binds
-    abstract fun bindRemoteConfigRepository(impl: DefaultRemoteConfigRepository): RemoteConfigRepository
+    abstract fun bindScoreSectionRepository(impl: DefaultScoreSectionRepository): ScoreSectionRepository
 
     @Binds
     abstract fun bindAuthRepository(impl: DefaultAuthRepository): AuthRepository
