@@ -22,8 +22,10 @@ import com.fenji.scoretrace.data.repository.SubjectRepository
 import com.fenji.scoretrace.data.repository.TargetSchoolRepository
 import com.fenji.scoretrace.util.AppLogger
 import com.fenji.scoretrace.util.AppToast
+import com.fenji.scoretrace.util.AiFeature
 import com.fenji.scoretrace.util.DateUtils
 import com.fenji.scoretrace.util.GradeCalculator
+import com.fenji.scoretrace.util.RateLimiter
 import com.fenji.scoretrace.util.aggregateExams
 import com.fenji.scoretrace.util.observeOnlineStatus
 import com.fenji.scoretrace.util.rankRecordFor
@@ -120,6 +122,7 @@ class AiViewModel @Inject constructor(
     private val targetSchoolRepository: TargetSchoolRepository,
     private val subjectRepository: SubjectRepository,
     private val provinceScoreRepository: ProvinceScoreRepository,
+    private val rateLimiter: RateLimiter,
     @param:ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -223,11 +226,23 @@ class AiViewModel @Inject constructor(
         sendMessage(_uiState.value.inputText)
     }
 
-    /** 发送一条消息：追加用户消息 + 空的 AI 消息，随后流式填充；并自动落库到当前会话。 */
+    /** 发送一条消息：先消耗每日配额，再追加用户消息 + 空的 AI 消息并开始流式填充。 */
     fun sendMessage(text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty() || _isLoading.value) return
+        // 先占位，避免额度校验期间用户连点导致重复请求/重复扣额
+        _isLoading.value = true
+        viewModelScope.launch {
+            if (!rateLimiter.tryConsume(AiFeature.Chat)) {
+                _isLoading.value = false
+                AppToast.warning("今日 AI 额度已用完，明天再来吧")
+                return@launch
+            }
+            startChat(trimmed)
+        }
+    }
 
+    private fun startChat(trimmed: String) {
         val userMessage = ChatMessage(id = nextMessageId++, role = "user", content = trimmed)
         val assistantId = nextMessageId++
         val assistantMessage = ChatMessage(

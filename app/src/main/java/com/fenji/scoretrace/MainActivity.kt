@@ -31,8 +31,9 @@ import androidx.lifecycle.lifecycleScope
 import com.fenji.scoretrace.data.local.UserPreferences
 import com.fenji.scoretrace.ui.component.AppToastHost
 import com.fenji.scoretrace.ui.component.CrashReportDialogHost
+import com.fenji.scoretrace.ui.component.RemoteDialogHost
 import com.fenji.scoretrace.ui.navigation.AppNavHost
-import com.fenji.scoretrace.ui.screen.splash.PosterSplash
+import com.fenji.scoretrace.ui.screen.splash.SplashScreen
 import com.fenji.scoretrace.ui.theme.ScoreTraceTheme
 import com.fenji.scoretrace.util.AppLogger
 import com.fenji.scoretrace.util.DateUtils
@@ -73,12 +74,10 @@ class MainActivity : ComponentActivity() {
         var keepSplash by mutableStateOf(true)
         splashScreen.setKeepOnScreenCondition { keepSplash }
         setContent {
-            var showPoster by remember { mutableStateOf(true) }
+            var showSplash by remember { mutableStateOf(true) }
             LaunchedEffect(Unit) {
                 delay(SPLASH_MIN_DURATION_MS)
                 keepSplash = false
-                delay(SPLASH_POSTER_DURATION_MS)
-                showPoster = false
             }
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = initialThemeMode)
             val darkTheme = when (themeMode) {
@@ -100,12 +99,16 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.align(Alignment.BottomCenter),
                         )
                         CrashReportDialogHost()
+                        RemoteDialogHost()
                         AnimatedVisibility(
-                            visible = showPoster,
+                            visible = showSplash,
                             enter = fadeIn(animationSpec = tween(durationMillis = 0)),
                             exit = fadeOut(animationSpec = tween(durationMillis = 450)),
                         ) {
-                            PosterSplash(gaokaoTimestamp = initialGaokaoTimestamp)
+                            SplashScreen(
+                                gaokaoTimestamp = initialGaokaoTimestamp,
+                                onFinished = { showSplash = false },
+                            )
                         }
                     }
                 }
@@ -146,10 +149,7 @@ class MainActivity : ComponentActivity() {
             PackageManager.PERMISSION_GRANTED
 
     private companion object {
-        /** 系统 Splash 最短展示时长：只覆盖首帧，随后交给海报层。 */
+        /** 系统 Splash 最短展示时长：只覆盖首帧，随后交给动态海报层。 */
         const val SPLASH_MIN_DURATION_MS = 300L
-
-        /** 海报层停留时长（不含淡出）。 */
-        const val SPLASH_POSTER_DURATION_MS = 2000L
     }
 }

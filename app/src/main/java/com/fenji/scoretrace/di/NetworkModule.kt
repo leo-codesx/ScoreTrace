@@ -4,6 +4,7 @@ import com.fenji.scoretrace.BuildConfig
 import com.fenji.scoretrace.data.remote.ApiService
 import com.fenji.scoretrace.data.remote.deepseek.DeepSeekApiService
 import com.fenji.scoretrace.data.remote.glm.GlmApiService
+import com.fenji.scoretrace.data.remote.music.MusicApiService
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
@@ -159,4 +160,58 @@ object NetworkModule {
     fun provideGlmApiService(
         @Named("glm") retrofit: Retrofit,
     ): GlmApiService = retrofit.create(GlmApiService::class.java)
+
+    // ── 在线音乐网络栈（Meting-API）──────────────────────────────
+    // 地址来自 BuildConfig（local.properties 可覆盖）；无需鉴权，使用 BASIC 日志避免把歌单 JSON 全量打印。
+
+    @Provides
+    @Singleton
+    @Named("music")
+    fun provideMusicOkHttpClient(): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BASIC
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
+        }
+        return OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .addInterceptor(logging)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @Named("music")
+    fun provideMusicRetrofit(
+        @Named("music") client: OkHttpClient,
+        gson: Gson,
+    ): Retrofit {
+        val base = BuildConfig.MUSIC_API_BASE.let { if (it.endsWith("/")) it else "$it/" }
+        return Retrofit.Builder()
+            .baseUrl(base)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMusicApiService(
+        @Named("music") retrofit: Retrofit,
+    ): MusicApiService = retrofit.create(MusicApiService::class.java)
+
+    /** 云更新下载专用：无 BODY 日志、无整体 callTimeout，避免大文件被 12s 总时限截断。 */
+    @Provides
+    @Singleton
+    @Named("download")
+    fun provideDownloadOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .build()
 }

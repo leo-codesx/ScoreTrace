@@ -45,7 +45,7 @@ import com.fenji.scoretrace.util.AppToast
  */
 @Composable
 fun ToolsScreen(
-    onOpenTimer: () -> Unit,
+    onOpenScoreConvert: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -66,7 +66,7 @@ fun ToolsScreen(
                 )
                 Spacer(modifier = Modifier.height(Dimensions.SpacingXSmall))
                 Text(
-                    text = "专注、复盘、规划，一站式备考",
+                    text = "赋分、复盘、规划，一站式备考",
                     fontSize = 13.sp,
                     color = ScoreTraceColors.TextSecondaryLight,
                 )
@@ -81,7 +81,7 @@ fun ToolsScreen(
                     .padding(bottom = Dimensions.SpacingLarge),
                 verticalArrangement = Arrangement.spacedBy(Dimensions.SpacingSmall),
             ) {
-                TimerHeroCard(onClick = onOpenTimer)
+                ScoreConvertHeroCard(onClick = onOpenScoreConvert)
 
                 Spacer(modifier = Modifier.height(Dimensions.SpacingSmall))
                 Text(
@@ -113,9 +113,9 @@ fun ToolsScreen(
     }
 }
 
-/** 学习计时器主入口：品牌蓝青渐变大卡。 */
+/** 新高考赋分主入口：品牌蓝青渐变大卡。 */
 @Composable
-private fun TimerHeroCard(onClick: () -> Unit) {
+private fun ScoreConvertHeroCard(onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -133,7 +133,7 @@ private fun TimerHeroCard(onClick: () -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_timer),
+                    painter = painterResource(R.drawable.ic_show_chart),
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(22.dp),
@@ -142,20 +142,20 @@ private fun TimerHeroCard(onClick: () -> Unit) {
             Spacer(modifier = Modifier.width(Dimensions.SpacingSmallMedium))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "学习计时器",
+                    text = "新高考赋分",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "正计时 / 倒计时，记录每一段专注",
+                    text = "化学 / 生物 / 政治 / 地理 等级转换",
                     fontSize = 12.sp,
                     color = Color.White.copy(alpha = 0.82f),
                 )
             }
             Text(
-                text = "开始",
+                text = "去换算",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = ScoreTraceColors.BrandPrimaryDark,

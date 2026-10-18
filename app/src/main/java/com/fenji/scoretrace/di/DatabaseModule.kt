@@ -10,7 +10,6 @@ import com.fenji.scoretrace.data.local.dao.ConversationDao
 import com.fenji.scoretrace.data.local.dao.ExamRecordDao
 import com.fenji.scoretrace.data.local.dao.NotificationDao
 import com.fenji.scoretrace.data.local.dao.ScoreRecordDao
-import com.fenji.scoretrace.data.local.dao.StudySessionDao
 import com.fenji.scoretrace.data.local.dao.StudyTaskDao
 import com.fenji.scoretrace.data.local.dao.SubjectDao
 import com.fenji.scoretrace.data.local.dao.TargetSchoolDao
@@ -140,6 +139,13 @@ object DatabaseModule {
         }
     }
 
+    /** v6.1 删除学习计时器：对应表一并移除。 */
+    private val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS `study_sessions`")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ScoreTraceDatabase =
@@ -152,6 +158,7 @@ object DatabaseModule {
                 MIGRATION_5_6,
                 MIGRATION_6_7,
                 MIGRATION_7_8,
+                MIGRATION_8_9,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -188,11 +195,6 @@ object DatabaseModule {
     @Singleton
     fun provideNotificationDao(database: ScoreTraceDatabase): NotificationDao =
         database.notificationDao()
-
-    @Provides
-    @Singleton
-    fun provideStudySessionDao(database: ScoreTraceDatabase): StudySessionDao =
-        database.studySessionDao()
 
     @Provides
     @Singleton

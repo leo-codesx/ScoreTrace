@@ -6,13 +6,14 @@ import com.fenji.scoretrace.data.repository.DefaultExamRecordRepository
 import com.fenji.scoretrace.data.repository.DefaultGlmVisionRepository
 import com.fenji.scoretrace.data.repository.DefaultLocalDataMigrationRepository
 import com.fenji.scoretrace.data.repository.DefaultMajorRepository
+import com.fenji.scoretrace.data.repository.DefaultMusicRepository
 import com.fenji.scoretrace.data.repository.DefaultNetworkRepository
 import com.fenji.scoretrace.data.repository.DefaultNotificationRepository
 import com.fenji.scoretrace.data.repository.DefaultSchoolRepository
 import com.fenji.scoretrace.data.repository.DefaultSchoolAdmissionRepository
 import com.fenji.scoretrace.data.repository.DefaultScoreRecordRepository
 import com.fenji.scoretrace.data.repository.DefaultProvinceScoreRepository
-import com.fenji.scoretrace.data.repository.DefaultStudySessionRepository
+import com.fenji.scoretrace.data.repository.DefaultRemoteConfigRepository
 import com.fenji.scoretrace.data.repository.DefaultStudyTaskRepository
 import com.fenji.scoretrace.data.repository.DefaultSubjectRepository
 import com.fenji.scoretrace.data.repository.DefaultTargetSchoolRepository
@@ -22,13 +23,14 @@ import com.fenji.scoretrace.data.repository.ExamRecordRepository
 import com.fenji.scoretrace.data.repository.GlmVisionRepository
 import com.fenji.scoretrace.data.repository.LocalDataMigrationRepository
 import com.fenji.scoretrace.data.repository.MajorRepository
+import com.fenji.scoretrace.data.repository.MusicRepository
 import com.fenji.scoretrace.data.repository.NetworkRepository
 import com.fenji.scoretrace.data.repository.NotificationRepository
 import com.fenji.scoretrace.data.repository.SchoolRepository
 import com.fenji.scoretrace.data.repository.SchoolAdmissionRepository
 import com.fenji.scoretrace.data.repository.ScoreRecordRepository
 import com.fenji.scoretrace.data.repository.ProvinceScoreRepository
-import com.fenji.scoretrace.data.repository.StudySessionRepository
+import com.fenji.scoretrace.data.repository.RemoteConfigRepository
 import com.fenji.scoretrace.data.repository.StudyTaskRepository
 import com.fenji.scoretrace.data.repository.SubjectRepository
 import com.fenji.scoretrace.data.repository.TargetSchoolRepository
@@ -46,9 +48,6 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindStudyTaskRepository(impl: DefaultStudyTaskRepository): StudyTaskRepository
-
-    @Binds
-    abstract fun bindStudySessionRepository(impl: DefaultStudySessionRepository): StudySessionRepository
 
     @Binds
     abstract fun bindScoreRecordRepository(impl: DefaultScoreRecordRepository): ScoreRecordRepository
@@ -82,6 +81,12 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindSchoolAdmissionRepository(impl: DefaultSchoolAdmissionRepository): SchoolAdmissionRepository
+
+    @Binds
+    abstract fun bindMusicRepository(impl: DefaultMusicRepository): MusicRepository
+
+    @Binds
+    abstract fun bindRemoteConfigRepository(impl: DefaultRemoteConfigRepository): RemoteConfigRepository
 
     @Binds
     abstract fun bindAuthRepository(impl: DefaultAuthRepository): AuthRepository

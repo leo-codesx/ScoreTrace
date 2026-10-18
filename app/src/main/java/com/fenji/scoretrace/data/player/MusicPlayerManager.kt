@@ -7,9 +7,15 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.fenji.scoretrace.data.repository.MusicRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File
@@ -59,7 +65,16 @@ val DEFAULT_PLAYLIST = listOf(
 class MusicPlayerManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val musicCache: MusicCacheRepository,
+    private val musicRepository: MusicRepository,
 ) {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** 在线歌单是否已尝试加载（成功或失败都置 true）；用于自动播放前短暂等待。 */
+    private val _playlistReady = MutableStateFlow(false)
+    val playlistReady: StateFlow<Boolean> = _playlistReady.asStateFlow()
+
+    private var remotePlaylistJob: Job? = null
 
     private var _exoPlayer: ExoPlayer? = null
     private var _audioCache: Cache? = null
@@ -112,6 +127,27 @@ class MusicPlayerManager @Inject constructor(
                     .build()
             }
             .build()
+    }
+
+    /**
+     * 进程内只加载一次在线歌单：成功则替换 [playlist]；失败由 Repository 回退静态列表。
+     * 若播放器已创建且未在播放，会把新媒体项替换进去；正在播放时保持当前曲目，避免打断。
+     */
+    fun loadRemotePlaylistOnce() {
+        if (remotePlaylistJob != null || _playlistReady.value) return
+        remotePlaylistJob = scope.launch {
+            val tracks = musicRepository.fetchDefaultPlaylist()
+            if (tracks.isNotEmpty()) {
+                _playlist.value = tracks
+                _exoPlayer?.let { player ->
+                    if (!player.isPlaying) {
+                        player.setMediaItems(tracks.map { MediaItem.fromUri(it.url) }, 0, 0L)
+                        player.prepare()
+                    }
+                }
+            }
+            _playlistReady.value = true
+        }
     }
 
     /** 载入播放列表并从 [startIndex] 开始（只 prepare，不自动播放，由调用方决定）。 */

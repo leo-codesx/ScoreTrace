@@ -11,7 +11,6 @@ import com.fenji.scoretrace.data.repository.ConversationRepository
 import com.fenji.scoretrace.data.repository.ExamRecordRepository
 import com.fenji.scoretrace.data.repository.NotificationRepository
 import com.fenji.scoretrace.data.repository.ScoreRecordRepository
-import com.fenji.scoretrace.data.repository.StudySessionRepository
 import com.fenji.scoretrace.data.repository.StudyTaskRepository
 import com.fenji.scoretrace.data.repository.SubjectRepository
 import com.fenji.scoretrace.data.repository.TargetSchoolRepository
@@ -58,8 +57,6 @@ data class MineUiState(
     val studyDays: Int = 0,
     /** 成绩记录：不同考试（examName）的场次数 */
     val examCount: Int = 0,
-    /** 连续打卡天数：按有专注记录的连续自然日计算 */
-    val continuousCheckIn: Int = 0,
     /** 主题模式：light / dark / system */
     val themeMode: String = "system",
     val autoPlayMusic: Boolean = true,
@@ -84,7 +81,6 @@ class MineViewModel @Inject constructor(
     private val subjectRepository: SubjectRepository,
     private val examRecordRepository: ExamRecordRepository,
     private val notificationRepository: NotificationRepository,
-    private val studySessionRepository: StudySessionRepository,
     private val conversationRepository: ConversationRepository,
 ) : ViewModel() {
 
@@ -118,15 +114,6 @@ class MineViewModel @Inject constructor(
             initialValue = null,
         )
 
-    /** 是否已登录：控制「开发者选项」入口是否显示（仅登录用户可见）。 */
-    val isLoggedIn: StateFlow<Boolean> = authRepository.observeCurrentUser()
-        .map { it != null }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = authRepository.isLoggedIn(),
-        )
-
     val uiState: StateFlow<MineUiState> = combine(
         userPreferences.themeMode,
         userPreferences.autoPlayMusic,
@@ -134,16 +121,14 @@ class MineViewModel @Inject constructor(
         targetSchoolRepository.observeLatest(),
         combine(
             scoreRecordRepository.observeAll(),
-            studySessionRepository.observeSessions(),
             userPreferences.selectedSubjects,
             userPreferences.province,
             combine(userPreferences.nickname, userPreferences.avatarPath) { nickname, avatarPath ->
                 nickname to avatarPath
             },
-        ) { records, sessions, subjects, province, profile ->
+        ) { records, subjects, province, profile ->
             MineStats(
                 examCount = records.map { it.examName }.filter { it.isNotBlank() }.distinct().size,
-                continuousCheckIn = consecutiveCheckInDays(sessions.map { it.startedAt }),
                 selectedSubjects = subjects,
                 province = province,
                 nickname = profile.first,
@@ -158,7 +143,6 @@ class MineViewModel @Inject constructor(
             targetSchool = targetSchool?.schoolName.orEmpty(),
             studyDays = studyDaysOf(gaokaoTimestamp),
             examCount = stats.examCount,
-            continuousCheckIn = stats.continuousCheckIn,
             selectedSubjects = stats.selectedSubjects,
             province = stats.province,
             nickname = stats.nickname,
@@ -258,7 +242,6 @@ class MineViewModel @Inject constructor(
             studyTaskRepository.clearAll()
             targetSchoolRepository.clearAll()
             notificationRepository.clearAll()
-            studySessionRepository.clearAll()
             conversationRepository.clearAll()
             userPreferences.clearAllKeepLocation()
             _toast.emit(ToastMessage("已清除全部数据", AppToastType.Success))
@@ -278,24 +261,9 @@ class MineViewModel @Inject constructor(
         ).toInt().coerceAtLeast(0)
 
     /** 连续打卡：以有专注记录的连续自然日计数，允许「今天还没学」而从上一天起算。 */
-    private fun consecutiveCheckInDays(startedAtMillis: List<Long>): Int {
-        if (startedAtMillis.isEmpty()) return 0
-        val days = startedAtMillis
-            .map { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() }
-            .toHashSet()
-        val today = LocalDate.now()
-        var cursor = if (today in days) today else today.minusDays(1)
-        var count = 0
-        while (cursor in days) {
-            count++
-            cursor = cursor.minusDays(1)
-        }
-        return count
-    }
 
     private data class MineStats(
         val examCount: Int,
-        val continuousCheckIn: Int,
         val selectedSubjects: List<String>,
         val province: String,
         val nickname: String,

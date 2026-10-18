@@ -19,7 +19,10 @@ import com.fenji.scoretrace.data.repository.VisionStage
 import com.fenji.scoretrace.ui.component.score.ScoreFormSubject
 import com.fenji.scoretrace.ui.component.score.scoreFormSubjects
 import com.fenji.scoretrace.util.AppLogger
+import com.fenji.scoretrace.util.AppToast
+import com.fenji.scoretrace.util.AiFeature
 import com.fenji.scoretrace.util.ImageEncoder
+import com.fenji.scoretrace.util.RateLimiter
 import com.google.gson.JsonParseException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -53,6 +56,7 @@ class AiScoreInputViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val glmVisionRepository: GlmVisionRepository,
     private val userPreferences: UserPreferences,
+    private val rateLimiter: RateLimiter,
     @param:ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -110,10 +114,17 @@ class AiScoreInputViewModel @Inject constructor(
      */
     fun onImagePicked(image: Uri) {
         if (_loadingStage.value != null) return
-        _parseHint.value = null
-        _recognizeOutcome.value = null
-        _loadingStage.value = "正在读取图片…"
+        // 先占位，避免额度校验期间重复选图导致重复请求/重复扣额
+        _loadingStage.value = "正在校验额度…"
         viewModelScope.launch {
+            if (!rateLimiter.tryConsume(AiFeature.Vision)) {
+                _loadingStage.value = null
+                AppToast.warning("今日拍照识分额度已用完，明天再来吧")
+                return@launch
+            }
+            _parseHint.value = null
+            _recognizeOutcome.value = null
+            _loadingStage.value = "正在读取图片…"
             val dataUrl = withContext(Dispatchers.IO) {
                 ImageEncoder.uriToDataUrl(appContext, image)
             }

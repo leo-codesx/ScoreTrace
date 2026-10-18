@@ -41,6 +41,18 @@ android {
         val authingDomain = localProperties.getProperty("authing.domain", "")
         buildConfigField("String", "AUTHING_APP_ID", "\"$authingAppId\"")
         buildConfigField("String", "AUTHING_DOMAIN", "\"$authingDomain\"")
+
+        // 在线音乐：Meting 实例地址与默认歌单 ID（不是密钥；可在 local.properties 覆盖）
+        val musicApiBase = localProperties.getProperty("music.api.base", "https://met.liiiu.cn/meting/")
+        val musicPlaylistId = localProperties.getProperty("music.playlist.id", "2619366284")
+        buildConfigField("String", "MUSIC_API_BASE", "\"$musicApiBase\"")
+        buildConfigField("String", "MUSIC_PLAYLIST_ID", "\"$musicPlaylistId\"")
+
+        // 远程公告 / 云更新 JSON 地址（为空时对应功能自动关闭，不硬编码第三方密钥）
+        val remoteConfigUrl = localProperties.getProperty("remote.config.url", "")
+        val updateConfigUrl = localProperties.getProperty("update.config.url", "")
+        buildConfigField("String", "REMOTE_CONFIG_URL", "\"$remoteConfigUrl\"")
+        buildConfigField("String", "UPDATE_CONFIG_URL", "\"$updateConfigUrl\"")
     }
 
     buildTypes {

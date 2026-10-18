@@ -31,6 +31,7 @@ import com.fenji.scoretrace.R
 import com.fenji.scoretrace.ui.component.RadarChart
 import com.fenji.scoretrace.ui.component.SubjectScore
 import com.fenji.scoretrace.ui.screen.score.AnalysisTab
+import com.fenji.scoretrace.ui.screen.score.SubjectComparison
 import com.fenji.scoretrace.ui.screen.score.SubjectTrend
 import com.fenji.scoretrace.ui.theme.ScoreTraceColors
 
@@ -41,6 +42,9 @@ fun AnalysisCard(
     onTabChange: (AnalysisTab) -> Unit,
     subjectRates: List<SubjectScore>,
     subjectTrend: SubjectTrend,
+    subjectComparisons: List<SubjectComparison>,
+    latestExamName: String,
+    previousExamName: String,
     /** 最近一次考试总分；null 时强弱科建议不显示提升估算 */
     currentTotalScore: Int?,
     selectedSubject: String,
@@ -97,6 +101,11 @@ fun AnalysisCard(
         when (selectedTab) {
             AnalysisTab.Radar -> RadarTabContent(subjectRates)
             AnalysisTab.Trend -> TrendTabContent(selectedSubject, onSubjectChange, subjectRates, subjectTrend)
+            AnalysisTab.Compare -> SubjectComparisonChart(
+                comparisons = subjectComparisons,
+                latestExamName = latestExamName,
+                previousExamName = previousExamName,
+            )
             AnalysisTab.StrongWeak -> StrongWeakTabContent(subjectRates, currentTotalScore)
         }
     }

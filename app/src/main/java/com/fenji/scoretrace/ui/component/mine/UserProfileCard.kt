@@ -51,7 +51,7 @@ fun UserProfileCard(
     examYear: String,
     studyDays: Int,
     examCount: Int,
-    checkInDays: Int,
+    subjectCount: Int,
     onAvatarClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -178,8 +178,8 @@ fun UserProfileCard(
                 modifier = Modifier.weight(1f),
             )
             StatItem(
-                label = "连续打卡",
-                value = checkInDays.toString(),
+                label = "选科科目",
+                value = subjectCount.toString(),
                 valueColor = ScoreTraceColors.WarningOrange,
                 modifier = Modifier.weight(1f),
             )

@@ -56,7 +56,6 @@ import com.fenji.scoretrace.ui.screen.auth.DataMigrationViewModel
 import com.fenji.scoretrace.ui.screen.home.HomeScreen
 import com.fenji.scoretrace.ui.screen.mine.AboutScreen
 import com.fenji.scoretrace.ui.screen.mine.AccountSettingsScreen
-import com.fenji.scoretrace.ui.screen.mine.DeveloperOptionsScreen
 import com.fenji.scoretrace.ui.screen.mine.FeedbackScreen
 import com.fenji.scoretrace.ui.screen.mine.LegalDocumentScreen
 import com.fenji.scoretrace.ui.screen.mine.MineScreen
@@ -68,7 +67,7 @@ import com.fenji.scoretrace.ui.screen.score.ManualScoreInputScreen
 import com.fenji.scoretrace.ui.screen.score.ScoreDetailScreen
 import com.fenji.scoretrace.ui.screen.score.ScoreScreenNew
 import com.fenji.scoretrace.ui.screen.subject.SubjectConfigScreen
-import com.fenji.scoretrace.ui.screen.timer.StudyTimerScreen
+import com.fenji.scoretrace.ui.screen.tools.ScoreConvertScreen
 import com.fenji.scoretrace.ui.screen.tools.ToolsScreen
 import com.fenji.scoretrace.util.AppToast
 
@@ -109,7 +108,7 @@ fun AppNavHost(
         currentRoute == Screen.Notifications.route ||
         currentRoute?.startsWith("notification_detail") == true ||
         currentRoute == Screen.SubjectConfig.route ||
-        currentRoute == Screen.StudyTimer.route ||
+        currentRoute == Screen.ScoreConvert.route ||
         currentRoute == Screen.AiHistory.route ||
         currentRoute == Screen.About.route ||
         currentRoute == Screen.Feedback.route ||
@@ -117,7 +116,6 @@ fun AppNavHost(
         currentRoute == Screen.AccountSettings.route ||
         currentRoute == Screen.PrivacyPolicy.route ||
         currentRoute == Screen.UserAgreement.route ||
-        currentRoute == Screen.DeveloperOptions.route ||
         (currentRoute == Screen.AI.route && imeVisible)
 
     LaunchedEffect(hideBottomBar) { onBottomBarVisibleChange(!hideBottomBar) }
@@ -297,7 +295,7 @@ fun AppNavHost(
                 popExitTransition = { tabExit() },
             ) {
                 ToolsScreen(
-                    onOpenTimer = { navController.navigate(Screen.StudyTimer.route) },
+                    onOpenScoreConvert = { navController.navigate(Screen.ScoreConvert.route) },
                 )
             }
             composable(
@@ -331,7 +329,6 @@ fun AppNavHost(
                     onOpenAbout = { navController.navigate(Screen.About.route) },
                     onOpenFeedback = { navController.navigate(Screen.Feedback.route) },
                     onOpenAccountSettings = { navController.navigate(Screen.AccountSettings.route) },
-                    onOpenDeveloperOptions = { navController.navigate(Screen.DeveloperOptions.route) },
                     onNavigateHome = { navController.navigateToTab(Screen.Home) },
                 )
             }
@@ -386,8 +383,8 @@ fun AppNavHost(
             ) {
                 NotificationDetailScreen(onBack = { navController.popBackStack() })
             }
-            composable(Screen.StudyTimer.route) {
-                StudyTimerScreen(onBack = { navController.popBackStack() })
+            composable(Screen.ScoreConvert.route) {
+                ScoreConvertScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.AiHistory.route) {
                 AiHistoryScreen(
@@ -431,9 +428,6 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() },
                 )
             }
-            composable(Screen.DeveloperOptions.route) {
-                DeveloperOptionsScreen(onBack = { navController.popBackStack() })
-            }
             composable(Screen.Feedback.route) {
                 FeedbackScreen(onBack = { navController.popBackStack() })
             }
@@ -460,7 +454,6 @@ fun AppNavHost(
             text = {
                 Text(
                     "检测到你之前记录了 ${data.scoreRecords} 条成绩、${data.targetSchools} 个学习目标" +
-                        (if (data.studySessions > 0) "、${data.studySessions} 条专注记录" else "") +
                         "。是否将它们绑定到当前账号？",
                 )
             },

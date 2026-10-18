@@ -37,8 +37,8 @@ sealed class Screen(val route: String) {
     /** 选科配置：从「我的」页进入，全屏页 */
     data object SubjectConfig : Screen("subject_config")
 
-    /** 学习计时器：从工具页进入，全屏页 */
-    data object StudyTimer : Screen("study_timer")
+    /** 新高考赋分工具：从工具页进入，全屏页 */
+    data object ScoreConvert : Screen("score_convert")
 
     /** AI 历史对话：从 AI 助手页进入，全屏页 */
     data object AiHistory : Screen("ai_history")
@@ -60,9 +60,6 @@ sealed class Screen(val route: String) {
 
     /** 用户协议：从「关于」页或登录页进入，全屏页 */
     data object UserAgreement : Screen("legal/agreement")
-
-    /** 开发者选项：从「我的」页底部进入（仅登录用户可见），全屏页 */
-    data object DeveloperOptions : Screen("developer_options")
 
     /** 成绩详情：从成绩页历史记录进入，携带考试 ID */
     data class ScoreDetail(val examId: Long) : Screen(ROUTE) {

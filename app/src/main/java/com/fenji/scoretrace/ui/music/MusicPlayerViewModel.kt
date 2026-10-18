@@ -13,7 +13,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 /** 循环模式的 UI 三态：关闭 / 列表循环 / 单曲循环。 */
@@ -99,6 +101,7 @@ class MusicPlayerViewModel @Inject constructor(
     private var autoPlayHandled = false
 
     init {
+        playerManager.loadRemotePlaylistOnce()
         player.addListener(listener)
         // 500ms 轮询播放进度/总时长；进度条只在叶子 composable 读值，不会拖累整页重组。
         // ExoPlayer 必须在主线程访问，viewModelScope 默认就是 Main。
@@ -119,8 +122,12 @@ class MusicPlayerViewModel @Inject constructor(
     fun autoPlayOnce(enabled: Boolean) {
         if (autoPlayHandled) return
         autoPlayHandled = true
-        if (!enabled || player.isPlaying) return
-        play()
+        if (!enabled) return
+        viewModelScope.launch {
+            // 短暂等待在线歌单（最多 3s）；超时或失败时直接用当前静态列表播放。
+            withTimeoutOrNull(3_000L) { playerManager.playlistReady.first { it } }
+            if (!player.isPlaying) play()
+        }
     }
 
     fun play() {

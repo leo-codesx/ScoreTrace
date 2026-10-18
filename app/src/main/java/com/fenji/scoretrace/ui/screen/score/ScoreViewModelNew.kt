@@ -44,6 +44,7 @@ enum class TrendRange(val label: String) {
 enum class AnalysisTab(val label: String) {
     Radar("雷达图"),
     Trend("单科趋势"),
+    Compare("对比"),
     StrongWeak("强弱科"),
 }
 
@@ -93,6 +94,13 @@ data class SubjectTrend(
     val latest: Int? = null,
 )
 
+/** 最近两次考试的单科对比（任一次缺考则该科为 null）。 */
+data class SubjectComparison(
+    val subject: String,
+    val latestScore: Int?,
+    val previousScore: Int?,
+)
+
 /** 一次考试的历史记录（按 examName 聚合）。 */
 data class ExamHistoryItem(
     /** 由 examName 派生的稳定 id，供导航到详情页使用 */
@@ -136,6 +144,9 @@ data class ScorePageUiState(
     val selectedSubject: String = "数学",
     val subjectRates: List<SubjectScore> = emptyList(),
     val subjectTrend: SubjectTrend = SubjectTrend(),
+    /** 最近一次与上一次考试的各科分数对比 */
+    val subjectComparisons: List<SubjectComparison> = emptyList(),
+    val previousExamName: String = "",
     val historyGroups: List<HistoryGroup> = emptyList(),
     val filter: ScoreFilterState = ScoreFilterState(),
     /** 趋势卡标题：无科目筛选时为「总分趋势」，否则为「X趋势」 */
@@ -286,6 +297,17 @@ class ScoreViewModelNew @Inject constructor(
         val previous = aggregated.getOrNull(1)
         val latestRank = latest?.let { rankRecordFor(exams, it.name) }
 
+        val subjectComparisons = (Constants.REQUIRED_SUBJECT_NAMES + selectedSubjects).mapNotNull { name ->
+            val subjectId = idByName[name] ?: return@mapNotNull null
+            val latestScore = latest?.records?.firstOrNull { it.subjectId == subjectId }?.score?.toInt()
+            val previousScore = previous?.records?.firstOrNull { it.subjectId == subjectId }?.score?.toInt()
+            if (latestScore == null && previousScore == null) {
+                null
+            } else {
+                SubjectComparison(name, latestScore, previousScore)
+            }
+        }
+
         ScorePageUiState(
             isLoading = false,
             hasScores = latest != null,
@@ -306,6 +328,8 @@ class ScoreViewModelNew @Inject constructor(
             selectedSubject = controls.subject,
             subjectRates = subjectRates,
             subjectTrend = subjectTrend,
+            subjectComparisons = subjectComparisons,
+            previousExamName = previous?.name.orEmpty(),
             historyGroups = groupByMonth(history),
             filter = filter,
             trendTitle = filter.subject?.let { "${it}趋势" } ?: "总分趋势",
