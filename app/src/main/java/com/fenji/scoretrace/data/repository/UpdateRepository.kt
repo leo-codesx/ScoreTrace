@@ -52,7 +52,8 @@ private data class UpdateConfigDto(
 @Singleton
 class UpdateRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    @Named("download") private val client: OkHttpClient,
+    @param:Named("config") private val configClient: OkHttpClient,
+    @param:Named("download") private val downloadClient: OkHttpClient,
     private val gson: Gson,
 ) {
 
@@ -60,7 +61,7 @@ class UpdateRepository @Inject constructor(
         val url = BuildConfig.UPDATE_CONFIG_URL
         if (url.isBlank()) return@withContext UpdateCheckResult.NotConfigured
         runCatching {
-            val body = client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            val body = configClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 if (!response.isSuccessful) return@withContext UpdateCheckResult.Failed("HTTP ${response.code}")
                 response.body?.string().orEmpty()
             }
@@ -89,7 +90,7 @@ class UpdateRepository @Inject constructor(
             val dir = File(root, "ScoreTrace").apply { mkdirs() }
             val target = File(dir, "ScoreTrace-${info.versionName}.apk")
             if (target.exists()) target.delete()
-            val response = client.newCall(
+            val response = downloadClient.newCall(
                 Request.Builder().url(info.downloadUrl).build(),
             ).execute()
             if (!response.isSuccessful) error("下载失败 HTTP ${response.code}")

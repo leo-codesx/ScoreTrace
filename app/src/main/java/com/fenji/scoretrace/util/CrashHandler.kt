@@ -53,7 +53,10 @@ class CrashHandler(private val context: Context) : Thread.UncaughtExceptionHandl
         private const val DIR_NAME = "crash"
         private const val FILE_PREFIX = "crash_"
 
-        fun crashDir(context: Context): File = File(context.getExternalFilesDir(null), DIR_NAME)
+        fun crashDir(context: Context): File = File(
+            context.getExternalFilesDir(null) ?: context.filesDir,
+            DIR_NAME,
+        )
 
         /** 尚未处理的崩溃日志（已发送/已忽略的会被重命名，前缀不再是 crash_）。 */
         fun pendingCrashes(context: Context): List<File> =

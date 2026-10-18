@@ -30,19 +30,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.fenji.scoretrace.data.local.UserPreferences
 import com.fenji.scoretrace.ui.component.AppToastHost
-import com.fenji.scoretrace.ui.component.CrashReportDialogHost
 import com.fenji.scoretrace.ui.component.RemoteDialogHost
 import com.fenji.scoretrace.ui.navigation.AppNavHost
 import com.fenji.scoretrace.ui.screen.splash.SplashScreen
 import com.fenji.scoretrace.ui.theme.ScoreTraceTheme
 import com.fenji.scoretrace.util.AppLogger
+import com.fenji.scoretrace.util.AppToast
+import com.fenji.scoretrace.util.CrashHandler
 import com.fenji.scoretrace.util.DateUtils
 import com.fenji.scoretrace.util.LocationHelper
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -76,6 +79,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             var showSplash by remember { mutableStateOf(true) }
             LaunchedEffect(Unit) {
+                val crashes = runCatching {
+                    withContext(Dispatchers.IO) { CrashHandler.pendingCrashes(this@MainActivity) }
+                }.getOrDefault(emptyList())
+                if (crashes.isNotEmpty()) {
+                    AppToast.warning("上次运行发生崩溃，日志已保存至内部目录")
+                    withContext(Dispatchers.IO) { CrashHandler.markIgnored(crashes) }
+                }
                 delay(SPLASH_MIN_DURATION_MS)
                 keepSplash = false
             }
@@ -98,7 +108,6 @@ class MainActivity : ComponentActivity() {
                             bottomPadding = if (bottomBarVisible) 72.dp else 16.dp,
                             modifier = Modifier.align(Alignment.BottomCenter),
                         )
-                        CrashReportDialogHost()
                         RemoteDialogHost()
                         AnimatedVisibility(
                             visible = showSplash,

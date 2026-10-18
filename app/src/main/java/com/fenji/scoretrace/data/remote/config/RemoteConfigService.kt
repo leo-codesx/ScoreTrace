@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 /** 远程公告 / 活动弹窗配置。时间字段为 epoch 毫秒，0 表示不限制。 */
@@ -40,7 +41,7 @@ private data class RemoteDialogDto(
  */
 @Singleton
 class RemoteConfigService @Inject constructor(
-    private val client: OkHttpClient,
+    @param:Named("config") private val client: OkHttpClient,
     private val gson: Gson,
 ) {
     suspend fun fetch(url: String): RemoteDialogConfig? = withContext(Dispatchers.IO) {

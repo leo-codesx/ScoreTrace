@@ -8,6 +8,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.fenji.scoretrace.data.repository.MusicRepository
+import com.fenji.scoretrace.util.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File
@@ -136,17 +138,24 @@ class MusicPlayerManager @Inject constructor(
     fun loadRemotePlaylistOnce() {
         if (remotePlaylistJob != null || _playlistReady.value) return
         remotePlaylistJob = scope.launch {
-            val tracks = musicRepository.fetchDefaultPlaylist()
-            if (tracks.isNotEmpty()) {
-                _playlist.value = tracks
-                _exoPlayer?.let { player ->
-                    if (!player.isPlaying) {
-                        player.setMediaItems(tracks.map { MediaItem.fromUri(it.url) }, 0, 0L)
-                        player.prepare()
+            val tracks = runCatching { musicRepository.fetchDefaultPlaylist() }
+                .onFailure { AppLogger.w(TAG, "在线歌单加载异常：${it.message}") }
+                .getOrDefault(emptyList())
+            // ExoPlayer 必须在创建它的主线程访问，不能在 IO 协程里 setMediaItems/prepare。
+            withContext(Dispatchers.Main.immediate) {
+                runCatching {
+                    if (tracks.isNotEmpty()) {
+                        _playlist.value = tracks
+                        _exoPlayer?.let { player ->
+                            if (!player.isPlaying) {
+                                player.setMediaItems(tracks.map { MediaItem.fromUri(it.url) }, 0, 0L)
+                                player.prepare()
+                            }
+                        }
                     }
-                }
+                }.onFailure { AppLogger.e(TAG, "应用在线歌单失败", it) }
+                _playlistReady.value = true
             }
-            _playlistReady.value = true
         }
     }
 
@@ -212,6 +221,7 @@ class MusicPlayerManager @Inject constructor(
     }
 
     private companion object {
+        const val TAG = "MusicPlayer"
         const val AUDIO_CACHE_DIR = "audio_cache"
         const val AUDIO_CACHE_BYTES = 100L * 1024 * 1024
         const val AUDIO_CACHE_MAX_AGE_SECONDS = 604800L
