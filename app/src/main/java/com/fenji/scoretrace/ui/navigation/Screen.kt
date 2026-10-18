@@ -46,6 +46,9 @@ sealed class Screen(val route: String) {
     /** 选专业：从工具页进入，全屏页 */
     data object MajorExplorer : Screen("major_explorer")
 
+    /** 主题设置：从「我的」页主题项进入，全屏页 */
+    data object ThemeSettings : Screen("theme_settings")
+
     /** AI 历史对话：从 AI 助手页进入，全屏页 */
     data object AiHistory : Screen("ai_history")
 

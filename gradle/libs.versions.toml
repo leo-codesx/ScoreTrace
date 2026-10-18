@@ -23,6 +23,7 @@ androidxJunit = "1.2.1"
 espressoCore = "3.6.1"
 authing = "1.5.8"
 sonner = "0.4.0"
+haze = "1.0.0"
 
 [libraries]
 # AndroidX 基础
@@ -78,6 +79,9 @@ authing-guard = { module = "cn.authing:guard", version.ref = "authing" }
 
 # Toast（Compose Sonner：底部弹出 / 堆叠 / 四态 / 深色适配）
 sonner = { module = "io.github.dokar3:sonner", version.ref = "sonner" }
+
+# KernelSU 风格真实背板模糊
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 
 # 测试
 junit = { module = "junit:junit", version.ref = "junit" }

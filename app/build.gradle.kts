@@ -17,8 +17,8 @@ android {
         applicationId = "com.fenji.scoretrace"
         minSdk = 33
         targetSdk = 37
-        versionCode = 2
-        versionName = "6.1.5"
+        versionCode = 1
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -145,6 +145,9 @@ dependencies {
 
     // Toast（Compose Sonner）
     implementation(libs.sonner)
+
+    // KernelSU 风格模糊 / 液态玻璃
+    implementation(libs.haze)
 
     // 测试
     testImplementation(libs.junit)

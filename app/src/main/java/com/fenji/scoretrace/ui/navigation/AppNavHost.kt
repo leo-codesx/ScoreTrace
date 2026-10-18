@@ -2,6 +2,7 @@ package com.fenji.scoretrace.ui.navigation
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -47,6 +48,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.fenji.scoretrace.R
+import com.fenji.scoretrace.ui.component.kernelsu.FloatingBottomBar
 import com.fenji.scoretrace.ui.music.MusicPlayerViewModel
 import com.fenji.scoretrace.ui.screen.ai.AiHistoryScreen
 import com.fenji.scoretrace.ui.screen.ai.AiScreen
@@ -59,6 +61,7 @@ import com.fenji.scoretrace.ui.screen.mine.AccountSettingsScreen
 import com.fenji.scoretrace.ui.screen.mine.FeedbackScreen
 import com.fenji.scoretrace.ui.screen.mine.LegalDocumentScreen
 import com.fenji.scoretrace.ui.screen.mine.MineScreen
+import com.fenji.scoretrace.ui.screen.mine.ThemeSettingsScreen
 import com.fenji.scoretrace.ui.screen.notification.NotificationDetailScreen
 import com.fenji.scoretrace.ui.screen.notification.NotificationScreen
 import com.fenji.scoretrace.ui.screen.school.TargetSchoolScreen
@@ -72,6 +75,10 @@ import com.fenji.scoretrace.ui.screen.tools.ScoreConvertScreen
 import com.fenji.scoretrace.ui.screen.tools.ScoreSectionScreen
 import com.fenji.scoretrace.ui.screen.tools.ToolsScreen
 import com.fenji.scoretrace.util.AppToast
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
 
 /**
  * 顶层导航。音乐播放器的 ViewModel 在这一层获取——它的 ViewModelStoreOwner 是 Activity，
@@ -86,6 +93,10 @@ fun AppNavHost(
     navController: NavHostController = rememberNavController(),
     musicViewModel: MusicPlayerViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
+    enableBlur: Boolean = true,
+    enableFloatingBottomBar: Boolean = true,
+    enableLiquidGlass: Boolean = true,
+    enablePredictiveBack: Boolean = true,
     onBottomBarVisibleChange: (Boolean) -> Unit = {},
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -113,6 +124,7 @@ fun AppNavHost(
         currentRoute == Screen.ScoreConvert.route ||
         currentRoute == Screen.ScoreSection.route ||
         currentRoute == Screen.MajorExplorer.route ||
+        currentRoute == Screen.ThemeSettings.route ||
         currentRoute == Screen.AiHistory.route ||
         currentRoute == Screen.About.route ||
         currentRoute == Screen.Feedback.route ||
@@ -164,34 +176,63 @@ fun AppNavHost(
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
     val context = LocalContext.current
-    BackHandler {
-        // 底部 Tab 与登录页都没有可返回的上一页（登录页是未登录时的唯一页）→ 双击退出应用
-        if (currentRoute in topLevelRoutes || currentRoute == Screen.Login.route) {
-            val now = System.currentTimeMillis()
-            if (now - lastBackPressTime < 2000L) {
-                (context as? Activity)?.finish()
-            } else {
-                lastBackPressTime = now
-                AppToast.info("再按一次退出应用")
+    if (enablePredictiveBack && currentRoute != null &&
+        currentRoute !in topLevelRoutes && currentRoute != Screen.Login.route
+    ) {
+        PredictiveBackHandler { progress ->
+            try {
+                progress.collect { }
+                navController.popBackStack()
+            } catch (_: CancellationException) {
+                // 手势取消：保持当前页面
             }
-        } else {
-            navController.popBackStack()
+        }
+    } else {
+        BackHandler {
+            // 底部 Tab 与登录页都没有可返回的上一页（登录页是未登录时的唯一页）→ 双击退出应用
+            if (currentRoute in topLevelRoutes || currentRoute == Screen.Login.route) {
+                val now = System.currentTimeMillis()
+                if (now - lastBackPressTime < 2000L) {
+                    (context as? Activity)?.finish()
+                } else {
+                    lastBackPressTime = now
+                    AppToast.info("再按一次退出应用")
+                }
+            } else {
+                navController.popBackStack()
+            }
         }
     }
+
+    val hazeState = remember { HazeState() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (!hideBottomBar) {
-                LightBottomBar(
-                    tabs = tabs,
-                    currentRoute = currentRoute,
-                    onSelect = {
-                        // 切 Tab 前先收起音乐面板
-                        showMusicPanel = false
-                        navController.navigateToTab(it)
-                    },
-                )
+                if (enableFloatingBottomBar) {
+                    FloatingBottomBar(
+                        tabs = tabs,
+                        currentRoute = currentRoute,
+                        onSelect = {
+                            showMusicPanel = false
+                            navController.navigateToTab(it)
+                        },
+                        hazeState = if (enableBlur) hazeState else null,
+                        blurEnabled = enableBlur,
+                        liquidGlassEnabled = enableLiquidGlass,
+                    )
+                } else {
+                    LightBottomBar(
+                        tabs = tabs,
+                        currentRoute = currentRoute,
+                        onSelect = {
+                            // 切 Tab 前先收起音乐面板
+                            showMusicPanel = false
+                            navController.navigateToTab(it)
+                        },
+                    )
+                }
             }
         },
         // 顶部由 Scaffold 处理状态栏，底部由 bottomBar 槽位自动从内容区扣除
@@ -202,7 +243,8 @@ fun AppNavHost(
             startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .then(if (enableBlur) Modifier.haze(hazeState) else Modifier),
             // 进入二级页：新页从右整幅滑入，当前页只向左退 1/3 并淡出（视差，显得更顺滑）
             enterTransition = {
                 slideInHorizontally(
@@ -335,6 +377,7 @@ fun AppNavHost(
                     onOpenAbout = { navController.navigate(Screen.About.route) },
                     onOpenFeedback = { navController.navigate(Screen.Feedback.route) },
                     onOpenAccountSettings = { navController.navigate(Screen.AccountSettings.route) },
+                    onOpenThemeSettings = { navController.navigate(Screen.ThemeSettings.route) },
                     onNavigateHome = { navController.navigateToTab(Screen.Home) },
                 )
             }
@@ -397,6 +440,9 @@ fun AppNavHost(
             }
             composable(Screen.MajorExplorer.route) {
                 MajorExplorerScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Screen.ThemeSettings.route) {
+                ThemeSettingsScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.AiHistory.route) {
                 AiHistoryScreen(

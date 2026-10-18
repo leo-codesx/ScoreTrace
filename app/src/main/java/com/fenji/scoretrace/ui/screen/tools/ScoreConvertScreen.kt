@@ -94,7 +94,8 @@ fun ScoreConvertScreen(
                             .padding(Dimensions.SpacingMedium),
                     ) {
                         Text(
-                            text = "已加载 2026 云南「$subject」一分一段表，将根据原始分自动计算排名百分比与赋分。",
+                            text = "已加载 2025 云南「$subject」赋分参考表（物理/历史为真实一分一段；再选科目为估算表）。" +
+                                "将根据原始分自动计算排名百分比与赋分。",
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
                             color = ScoreTraceColors.SuccessGreen,
@@ -191,7 +192,7 @@ fun ScoreConvertScreen(
 
                 Text(
                     text = "等级比例：A 15% · B 35% · C 35% · D 13% · E 2%；等级分区间：A 86-100 · B 71-85 · C 56-70 · D 41-55 · E 30-40。" +
-                        "云南使用 2026 一分一段占位数据，结果仅供参考。",
+                        "物理/历史为 2025 真实一分一段；再选科目无官方表，使用估算，结果仅供参考。",
                     fontSize = 12.sp,
                     lineHeight = 18.sp,
                     color = ScoreTraceColors.TextTertiaryLight,

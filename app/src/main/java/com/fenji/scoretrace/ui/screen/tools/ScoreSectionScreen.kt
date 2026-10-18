@@ -102,7 +102,7 @@ fun ScoreSectionScreen(
                         Text("云南", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = ScoreTraceColors.TextPrimaryLight)
                     }
                     Text(
-                        text = "2026 届",
+                        text = "2025 数据",
                         fontSize = 12.sp,
                         color = ScoreTraceColors.BrandPrimary,
                         modifier = Modifier
@@ -167,9 +167,9 @@ fun ScoreSectionScreen(
                 ) {
                     Text(
                         text = if (hasData) {
-                            "已加载云南 2026「$category」类一分一段占位数据。"
+                            "已加载云南 2025「$category」类真实一分一段数据（省考试院/中国教育在线整理）。"
                         } else {
-                            "暂无「$category」类一分一段数据。当前仅录入物理类占位数据。"
+                            "暂无「$category」类一分一段数据。"
                         },
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
@@ -220,7 +220,7 @@ fun ScoreSectionScreen(
                 result?.let { SectionResultCard(it) }
 
                 Text(
-                    text = "数据为 2026 云南物理类占位示例，正式一分一段表待后续脚本抓取；同位分需要历年数据，当前暂不提供。",
+                    text = "数据为 2025 云南真实一分一段表（物理/历史）；同位分需要历年数据，当前暂不提供。",
                     fontSize = 11.sp,
                     lineHeight = 17.sp,
                     color = ScoreTraceColors.TextTertiaryLight,

@@ -1,7 +1,14 @@
 package com.fenji.scoretrace.data.player
 
 import android.content.Context
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -82,6 +89,44 @@ class MusicPlayerManager @Inject constructor(
     private var _exoPlayer: ExoPlayer? = null
     private var _audioCache: Cache? = null
 
+    private val audioManager = context.getSystemService(AudioManager::class.java)
+    private var hasAudioFocus = false
+    private var wasPlayingBeforeFocusLoss = false
+
+    private val focusChangeListener = AudioManager.OnAudioFocusChangeListener { change ->
+        when (change) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                wasPlayingBeforeFocusLoss = _exoPlayer?.isPlaying == true
+                _exoPlayer?.playWhenReady = false
+                abandonAudioFocus()
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                wasPlayingBeforeFocusLoss = _exoPlayer?.isPlaying == true
+                _exoPlayer?.playWhenReady = false
+            }
+
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                if (wasPlayingBeforeFocusLoss) {
+                    wasPlayingBeforeFocusLoss = false
+                    play()
+                }
+            }
+        }
+    }
+
+    private val focusRequest: AudioFocusRequest by lazy {
+        AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build(),
+            )
+            .setOnAudioFocusChangeListener(focusChangeListener, Handler(Looper.getMainLooper()))
+            .build()
+    }
+
     /** 当前播放列表（可增删）；与播放器的 media items 保持一致 */
     private val _playlist = MutableStateFlow(musicCache.loadPlaylist() ?: DEFAULT_PLAYLIST)
     val playlist: StateFlow<List<TrackInfo>> = _playlist.asStateFlow()
@@ -105,6 +150,26 @@ class MusicPlayerManager @Inject constructor(
                         setMediaItems(_playlist.value.map { MediaItem.fromUri(it.url) }, startIndex, startPosition)
                         repeatMode = Player.REPEAT_MODE_ALL
                         volume = DEFAULT_VOLUME
+                        setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setUsage(C.USAGE_MEDIA)
+                                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                                .build(),
+                            false,
+                        )
+                        addListener(object : Player.Listener {
+                            override fun onPlayerError(error: PlaybackException) {
+                                AppLogger.e(
+                                    TAG,
+                                    "player error code=${error.errorCode} name=${error.errorCodeName} message=${error.message}",
+                                    error,
+                                )
+                            }
+
+                            override fun onPlaybackStateChanged(playbackState: Int) {
+                                AppLogger.i(TAG, "playbackState=$playbackState")
+                            }
+                        })
                         // 显式声明：只有调用 play() 才出声，不依赖 ExoPlayer 的默认值，
                         // 以免绕过「进入应用自动播放音乐」开关
                         playWhenReady = false
@@ -166,14 +231,23 @@ class MusicPlayerManager @Inject constructor(
 
     /** 载入播放列表并从 [startIndex] 开始（只 prepare，不自动播放，由调用方决定）。 */
     fun setPlaylist(tracks: List<TrackInfo>, startIndex: Int = 0) {
+        if (!requireMainThread()) return
         _playlist.value = tracks
         exoPlayer.setMediaItems(tracks.map { MediaItem.fromUri(it.url) }, startIndex, 0L)
         exoPlayer.prepare()
     }
 
-    fun skipToNext() = exoPlayer.seekToNextMediaItem()
+    fun skipToNext(): Boolean {
+        if (!requireMainThread()) return false
+        exoPlayer.seekToNextMediaItem()
+        return true
+    }
 
-    fun skipToPrevious() = exoPlayer.seekToPreviousMediaItem()
+    fun skipToPrevious(): Boolean {
+        if (!requireMainThread()) return false
+        exoPlayer.seekToPreviousMediaItem()
+        return true
+    }
 
     /** 切到后台前是否正在播放——决定回前台要不要自动恢复 */
     private var wasPlayingBeforeBackground = false
@@ -206,12 +280,40 @@ class MusicPlayerManager @Inject constructor(
         }
     }
 
-    fun play() {
+    fun play(): Boolean {
+        if (!requireMainThread()) return false
+        if (!requestAudioFocus()) {
+            AppLogger.e(TAG, "requestAudioFocus denied")
+            return false
+        }
         exoPlayer.playWhenReady = true
+        return true
     }
 
     fun pause() {
-        exoPlayer.playWhenReady = false
+        if (!requireMainThread()) return
+        _exoPlayer?.playWhenReady = false
+        abandonAudioFocus()
+    }
+
+    private fun requestAudioFocus(): Boolean {
+        if (hasAudioFocus) return true
+        hasAudioFocus = audioManager.requestAudioFocus(focusRequest) ==
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        return hasAudioFocus
+    }
+
+    private fun abandonAudioFocus() {
+        if (hasAudioFocus) {
+            audioManager.abandonAudioFocusRequest(focusRequest)
+            hasAudioFocus = false
+        }
+    }
+
+    private fun requireMainThread(): Boolean {
+        if (Looper.myLooper() == Looper.getMainLooper()) return true
+        AppLogger.e(TAG, "player operation off main thread: ${Thread.currentThread().name}")
+        return false
     }
 
     /**
@@ -219,6 +321,7 @@ class MusicPlayerManager @Inject constructor(
      * 若将来需要「退出应用就释放」，应在这里接上前台服务或生命周期钩子。
      */
     fun release() {
+        abandonAudioFocus()
         _exoPlayer?.release()
         _exoPlayer = null
         _audioCache?.close()

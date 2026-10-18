@@ -101,7 +101,7 @@ fun MajorExplorerScreen(
                             .padding(Dimensions.SpacingMedium),
                     ) {
                         Text(
-                            text = "按 3+1+2 选科组合筛选可报专业。专业目录本身不含选科要求，结果按门类与专业名称估算，具体以院校招生专业目录为准。",
+                            text = "按 3+1+2 选科组合筛选可报专业。选科要求来自掌上高考接口（已写入部分专业）；未收录的专业按可报展示，具体以院校招生专业目录为准。",
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
                             color = ScoreTraceColors.TextSecondaryLight,

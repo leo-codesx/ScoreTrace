@@ -48,7 +48,6 @@ import com.fenji.scoretrace.ui.component.mine.SettingGroup
 import com.fenji.scoretrace.ui.component.mine.SettingGroupTitle
 import com.fenji.scoretrace.ui.component.mine.SettingNavigateItem
 import com.fenji.scoretrace.ui.component.mine.SettingSwitchItem
-import com.fenji.scoretrace.ui.component.mine.ThemeModeSheet
 import com.fenji.scoretrace.ui.component.mine.UserProfileCard
 import com.fenji.scoretrace.ui.component.mine.themeModeLabel
 import com.fenji.scoretrace.ui.theme.ScoreTraceColors
@@ -69,6 +68,7 @@ fun MineScreen(
     onOpenAbout: () -> Unit = {},
     onOpenFeedback: () -> Unit = {},
     onOpenAccountSettings: () -> Unit = {},
+    onOpenThemeSettings: () -> Unit = {},
     onNavigateHome: () -> Unit = {},
     viewModel: MineViewModel = hiltViewModel(),
 ) {
@@ -79,7 +79,6 @@ fun MineScreen(
     val context = LocalContext.current
     var showClearDataDialog by rememberSaveable { mutableStateOf(false) }
     var showEditProfile by rememberSaveable { mutableStateOf(false) }
-    var showThemeSheet by rememberSaveable { mutableStateOf(false) }
     var showExportSheet by rememberSaveable { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -187,7 +186,7 @@ fun MineScreen(
                     iconBgColor = GraySlate,
                     title = "主题",
                     value = themeModeLabel(state.themeMode),
-                    onClick = { showThemeSheet = true },
+                    onClick = onOpenThemeSettings,
                 )
                 SettingDivider()
                 SettingSwitchItem(
@@ -295,14 +294,6 @@ fun MineScreen(
             onSaveNickname = viewModel::setNickname,
             onAvatarPicked = viewModel::saveAvatar,
             onDismiss = { showEditProfile = false },
-        )
-    }
-
-    if (showThemeSheet) {
-        ThemeModeSheet(
-            current = state.themeMode,
-            onSelect = viewModel::setThemeMode,
-            onDismiss = { showThemeSheet = false },
         )
     }
 

@@ -7,6 +7,8 @@ package com.fenji.scoretrace.data.model
 data class Major(
     val code: String,
     val name: String,
+    /** 掌上高考接口返回的真实选科要求；null 表示未收录（不猜测）。 */
+    val requiredSubjects: List<String>? = null,
 ) {
     /** 统一展示格式：专业代码 + 空格 + 专业名称，例「080901 计算机科学与技术」。 */
     val display: String get() = "$code $name"

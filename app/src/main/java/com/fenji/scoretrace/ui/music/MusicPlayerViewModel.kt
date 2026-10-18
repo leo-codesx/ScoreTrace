@@ -127,7 +127,9 @@ class MusicPlayerViewModel @Inject constructor(
 
     fun play() {
         _errorMessage.value = null
-        playerManager.play()
+        if (!playerManager.play()) {
+            _errorMessage.value = "无法获取音频焦点，请检查系统设置"
+        }
     }
 
     fun pause() {
@@ -151,13 +153,11 @@ class MusicPlayerViewModel @Inject constructor(
 
     /** 下一首：切歌后直接续播，符合「点一下就能听」的直觉。 */
     fun skipToNext() {
-        playerManager.skipToNext()
-        play()
+        if (playerManager.skipToNext()) play()
     }
 
     fun skipToPrevious() {
-        playerManager.skipToPrevious()
-        play()
+        if (playerManager.skipToPrevious()) play()
     }
 
     /** 拖动进度条跳转。立即回写一次进度，避免要等下一次轮询才有反馈。 */

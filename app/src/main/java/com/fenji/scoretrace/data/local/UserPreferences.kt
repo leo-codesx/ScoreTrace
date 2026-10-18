@@ -48,6 +48,33 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    /** 顶栏/底栏模糊 */
+    val enableBlur: Flow<Boolean> = context.dataStore.data.map { it[KEY_ENABLE_BLUR] ?: true }
+    suspend fun setEnableBlur(enabled: Boolean) {
+        context.dataStore.edit { it[KEY_ENABLE_BLUR] = enabled }
+    }
+
+    /** KernelSU 风格悬浮底栏 */
+    val enableFloatingBottomBar: Flow<Boolean> =
+        context.dataStore.data.map { it[KEY_ENABLE_FLOATING_BOTTOM_BAR] ?: true }
+    suspend fun setEnableFloatingBottomBar(enabled: Boolean) {
+        context.dataStore.edit { it[KEY_ENABLE_FLOATING_BOTTOM_BAR] = enabled }
+    }
+
+    /** 悬浮底栏液态玻璃 */
+    val enableLiquidGlass: Flow<Boolean> =
+        context.dataStore.data.map { it[KEY_ENABLE_LIQUID_GLASS] ?: true }
+    suspend fun setEnableLiquidGlass(enabled: Boolean) {
+        context.dataStore.edit { it[KEY_ENABLE_LIQUID_GLASS] = enabled }
+    }
+
+    /** 预测性返回手势 */
+    val enablePredictiveBack: Flow<Boolean> =
+        context.dataStore.data.map { it[KEY_ENABLE_PREDICTIVE_BACK] ?: true }
+    suspend fun setEnablePredictiveBack(enabled: Boolean) {
+        context.dataStore.edit { it[KEY_ENABLE_PREDICTIVE_BACK] = enabled }
+    }
+
     /**
      * 主题模式：[THEME_LIGHT] 浅色 / [THEME_DARK] 深色 / [THEME_SYSTEM] 跟随系统。
      *
@@ -265,6 +292,10 @@ class UserPreferences @Inject constructor(
     private companion object {
         val KEY_GAOKAO_TIMESTAMP = longPreferencesKey("gaokao_timestamp")
         val KEY_AUTO_PLAY_MUSIC = booleanPreferencesKey("auto_play_music")
+        val KEY_ENABLE_BLUR = booleanPreferencesKey("enable_blur")
+        val KEY_ENABLE_FLOATING_BOTTOM_BAR = booleanPreferencesKey("enable_floating_bottom_bar")
+        val KEY_ENABLE_LIQUID_GLASS = booleanPreferencesKey("enable_liquid_glass")
+        val KEY_ENABLE_PREDICTIVE_BACK = booleanPreferencesKey("enable_predictive_back")
         val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_SELECTED_SUBJECTS = stringPreferencesKey("selected_subjects")

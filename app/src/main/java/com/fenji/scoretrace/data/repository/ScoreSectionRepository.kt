@@ -30,6 +30,8 @@ data class ScoreSectionData(
     val physics: ScoreSectionTable = ScoreSectionTable(0, emptyList()),
     val history: ScoreSectionTable = ScoreSectionTable(0, emptyList()),
     val subjects: Map<String, ScoreSectionTable> = emptyMap(),
+    /** 再选科目无官方一分一段表时，subjects 为估算数据。 */
+    val subjectsEstimated: Boolean = false,
 ) {
     fun tableForCategory(category: String): ScoreSectionTable? {
         val table = when (category) {

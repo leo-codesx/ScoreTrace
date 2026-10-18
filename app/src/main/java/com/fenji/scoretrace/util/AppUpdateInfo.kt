@@ -7,8 +7,8 @@ package com.fenji.scoretrace.util
  * 下载地址必须是蓝奏云固定分享页，不能使用临时 CDN 直链。
  */
 object AppUpdateInfo {
-    const val LATEST_VERSION_CODE = 2
-    const val LATEST_VERSION_NAME = "6.1.5"
+    const val LATEST_VERSION_CODE = 1
+    const val LATEST_VERSION_NAME = "1.0.1"
     const val DOWNLOAD_WEB_URL = "https://wwbmbz.lanzoul.com/b01i5xlvlc"
     const val DOWNLOAD_PASSWORD = "2ed2"
 }

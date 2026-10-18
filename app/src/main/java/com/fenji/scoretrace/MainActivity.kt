@@ -90,6 +90,10 @@ class MainActivity : ComponentActivity() {
                 keepSplash = false
             }
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = initialThemeMode)
+            val enableBlur by userPreferences.enableBlur.collectAsStateWithLifecycle(initialValue = true)
+            val enableFloatingBottomBar by userPreferences.enableFloatingBottomBar.collectAsStateWithLifecycle(initialValue = true)
+            val enableLiquidGlass by userPreferences.enableLiquidGlass.collectAsStateWithLifecycle(initialValue = true)
+            val enablePredictiveBack by userPreferences.enablePredictiveBack.collectAsStateWithLifecycle(initialValue = true)
             val darkTheme = when (themeMode) {
                 "light" -> false
                 "dark" -> true
@@ -103,7 +107,13 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize()) {
                         // 底栏可见性由 AppNavHost 回传，供 Toast 定位避让底栏
                         var bottomBarVisible by remember { mutableStateOf(true) }
-                        AppNavHost(onBottomBarVisibleChange = { bottomBarVisible = it })
+                        AppNavHost(
+                            enableBlur = enableBlur,
+                            enableFloatingBottomBar = enableFloatingBottomBar,
+                            enableLiquidGlass = enableLiquidGlass,
+                            enablePredictiveBack = enablePredictiveBack,
+                            onBottomBarVisibleChange = { bottomBarVisible = it },
+                        )
                         AppToastHost(
                             bottomPadding = if (bottomBarVisible) 72.dp else 16.dp,
                             modifier = Modifier.align(Alignment.BottomCenter),
