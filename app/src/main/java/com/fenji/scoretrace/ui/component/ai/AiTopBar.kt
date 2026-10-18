@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fenji.scoretrace.R
+import com.fenji.scoretrace.ui.theme.Dimensions
+import com.fenji.scoretrace.ui.theme.LocalAppDarkTheme
 import com.fenji.scoretrace.ui.theme.ScoreTraceColors
 
 /**
@@ -93,29 +95,40 @@ private fun AiAvatar() {
     }
 }
 
-/** 网络状态徽章：在线绿点 + 「在线」，离线灰点 + 「离线」。 */
+/** 网络状态徽章：柔和浅绿胶囊 + 「在线」，离线用中性灰。 */
 @Composable
 private fun OnlineBadge(isOnline: Boolean) {
+    val dark = LocalAppDarkTheme.current
     val accent = if (isOnline) ScoreTraceColors.SuccessGreen else ScoreTraceColors.TextTertiaryLight
+    val container = if (isOnline) {
+        accent.copy(alpha = if (dark) 0.18f else 0.10f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val labelColor = if (isOnline) {
+        if (dark) ScoreTraceColors.SuccessDark else ScoreTraceColors.SuccessLight
+    } else {
+        ScoreTraceColors.TextTertiaryLight
+    }
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(accent.copy(alpha = 0.12f))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .clip(RoundedCornerShape(50))
+            .background(container)
+            .padding(horizontal = Dimensions.SpacingSmall, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(6.dp)
+                .size(5.dp)
                 .clip(CircleShape)
                 .background(accent),
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = if (isOnline) "在线" else "离线",
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
-            color = accent,
+            color = labelColor,
         )
     }
 }

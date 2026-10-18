@@ -6,5 +6,6 @@
     <string name="tab_home">首页</string>
     <string name="tab_ai">AI</string>
     <string name="tab_score">成绩</string>
+    <string name="tab_tools">工具</string>
     <string name="tab_mine">我的</string>
 </resources>

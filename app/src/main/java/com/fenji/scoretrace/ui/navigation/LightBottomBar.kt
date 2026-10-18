@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -62,7 +63,7 @@ fun LightBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 4.dp)
                 .padding(top = 8.dp, bottom = 6.dp)
                 // 关键：避让系统导航栏/手势条
                 .navigationBarsPadding(),
@@ -74,6 +75,7 @@ fun LightBottomBar(
                     tab = tab,
                     selected = tab.screen.route == currentRoute,
                     onClick = { onSelect(tab.screen) },
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -81,10 +83,11 @@ fun LightBottomBar(
 }
 
 @Composable
-private fun LightBottomBarItem(
+private fun RowScope.LightBottomBarItem(
     tab: BottomBarTab,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val contentColor = if (selected) {
         MaterialTheme.colorScheme.primary
@@ -97,12 +100,13 @@ private fun LightBottomBarItem(
         Color.Transparent
     }
     Column(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .background(bgColor)
             .clickable(onClick = onClick)
-            // 上下各 6dp：保证选中背景的圆角有完整空间，不被底栏边界截断
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            // 上下各 6dp：保证选中背景的圆角有完整空间，不被底栏边界截断；
+            // 5 个 Tab 时左右内边距收窄，高度与圆角保持原样。
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {

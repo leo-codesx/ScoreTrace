@@ -1,12 +1,16 @@
 package com.fenji.scoretrace.ui.component.ai
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,10 +25,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -104,24 +110,75 @@ fun ChatBubble(
     }
 }
 
-/** AI 气泡正文：流式为纯文本追加闪烁光标，收尾后一次渲染（Markdown 渲染在模块 3 接入）。 */
+/** AI 气泡正文：思考中显示跳动圆点；流式输出时尾部闪烁光标，收尾后光标淡出并轻微淡入正文。 */
 @Composable
 private fun AssistantContent(message: ChatMessage) {
-    Column {
+    val settle = remember { Animatable(1f) }
+    var wasStreaming by remember { mutableStateOf(message.isStreaming) }
+    LaunchedEffect(message.isStreaming) {
+        if (wasStreaming && !message.isStreaming) {
+            settle.snapTo(0.86f)
+            settle.animateTo(1f, tween(durationMillis = 240))
+        }
+        wasStreaming = message.isStreaming
+    }
+
+    Column(modifier = Modifier.graphicsLayer { alpha = settle.value }) {
         if (message.content.isEmpty() && message.isStreaming) {
-            Text(
-                text = "思考中…",
-                fontSize = 14.sp,
-                lineHeight = 21.sp,
-                color = ScoreTraceColors.TextSecondaryLight,
-            )
+            ThinkingIndicator()
         } else {
             MarkdownText(markdown = message.content)
         }
 
-        if (message.isStreaming) {
-            Spacer(modifier = Modifier.height(2.dp))
-            BlinkingCursor()
+        AnimatedVisibility(
+            visible = message.isStreaming && message.content.isNotEmpty(),
+            enter = fadeIn(animationSpec = tween(durationMillis = 120)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 160)),
+        ) {
+            Column {
+                Spacer(modifier = Modifier.height(2.dp))
+                BlinkingCursor()
+            }
+        }
+    }
+}
+
+/** 等待首个 token 时的「正在思考」三点跳动动画。 */
+@Composable
+private fun ThinkingIndicator() {
+    val transition = rememberInfiniteTransition(label = "thinkingDots")
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "正在思考",
+            fontSize = 14.sp,
+            color = ScoreTraceColors.TextSecondaryLight,
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        repeat(3) { index ->
+            val bounce by transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 620,
+                        delayMillis = index * 130,
+                        easing = FastOutSlowInEasing,
+                    ),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "dot$index",
+            )
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 2.dp)
+                    .size(5.dp)
+                    .graphicsLayer {
+                        translationY = -3.dp.toPx() * bounce
+                        alpha = 0.35f + 0.65f * bounce
+                    }
+                    .clip(CircleShape)
+                    .background(ScoreTraceColors.BrandPrimary),
+            )
         }
     }
 }

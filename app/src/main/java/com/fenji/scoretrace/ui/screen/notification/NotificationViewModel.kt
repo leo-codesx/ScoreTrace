@@ -1,10 +1,12 @@
 package com.fenji.scoretrace.ui.screen.notification
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fenji.scoretrace.data.local.entity.NotificationEntity
 import com.fenji.scoretrace.data.repository.NotificationRepository
 import com.fenji.scoretrace.data.repository.NotificationType
+import com.fenji.scoretrace.ui.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,5 +57,23 @@ class NotificationViewModel @Inject constructor(
 
     fun clearAll() {
         viewModelScope.launch { notificationRepository.clearAll() }
+    }
+}
+
+/** 通知详情：按 id 订阅单条通知，进入即标记已读。 */
+@HiltViewModel
+class NotificationDetailViewModel @Inject constructor(
+    private val notificationRepository: NotificationRepository,
+    savedStateHandle: SavedStateHandle,
+) : ViewModel() {
+
+    private val notificationId: Long =
+        savedStateHandle.get<Long>(Screen.NotificationDetail.ARG_ID) ?: 0L
+
+    val notification: StateFlow<NotificationEntity?> = notificationRepository.observeById(notificationId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    init {
+        viewModelScope.launch { notificationRepository.markRead(notificationId) }
     }
 }

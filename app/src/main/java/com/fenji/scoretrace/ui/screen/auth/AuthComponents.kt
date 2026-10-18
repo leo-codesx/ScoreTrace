@@ -1,5 +1,7 @@
 package com.fenji.scoretrace.ui.screen.auth
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -29,8 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -96,45 +104,69 @@ fun AuthTextField(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
+    var focused by remember { mutableStateOf(false) }
     val effectiveTransformation = when {
         !isPassword -> VisualTransformation.None
         passwordVisible -> VisualTransformation.None
         else -> PasswordVisualTransformation()
     }
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
-        placeholder = { Text(placeholder, color = ScoreTraceColors.TextTertiaryLight, fontSize = 15.sp) },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        textStyle = MaterialTheme.typography.bodyLarge,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
-        visualTransformation = effectiveTransformation,
-        trailingIcon = when {
-            isPassword -> {
-                {
-                    Text(
-                        text = if (passwordVisible) "隐藏" else "显示",
-                        fontSize = 13.sp,
-                        color = ScoreTraceColors.BrandPrimary,
-                        modifier = Modifier
-                            .clickable { passwordVisible = !passwordVisible }
-                            .padding(horizontal = 12.dp),
+    val shape = RoundedCornerShape(12.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            // 聚焦时在输入框边缘绘制蓝青渐变描边（OutlinedTextField 只能单色描边）
+            .drawWithContent {
+                drawContent()
+                if (focused) {
+                    val stroke = 1.5.dp.toPx()
+                    drawRoundRect(
+                        brush = Brush.linearGradient(ScoreTraceColors.AiGradient),
+                        topLeft = Offset(stroke / 2, stroke / 2),
+                        size = Size(size.width - stroke, size.height - stroke),
+                        cornerRadius = CornerRadius(12.dp.toPx()),
+                        style = Stroke(width = stroke),
                     )
                 }
-            }
+            },
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focused = it.isFocused },
+            placeholder = { Text(placeholder, color = ScoreTraceColors.TextTertiaryLight, fontSize = 15.sp) },
+            singleLine = true,
+            shape = shape,
+            textStyle = MaterialTheme.typography.bodyLarge,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+            visualTransformation = effectiveTransformation,
+            trailingIcon = when {
+                isPassword -> {
+                    {
+                        Text(
+                            text = if (passwordVisible) "隐藏" else "显示",
+                            fontSize = 13.sp,
+                            color = ScoreTraceColors.BrandPrimary,
+                            modifier = Modifier
+                                .clickable { passwordVisible = !passwordVisible }
+                                .padding(horizontal = 12.dp),
+                        )
+                    }
+                }
 
-            else -> trailing
-        },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = ScoreTraceColors.BrandPrimary,
-            unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            cursorColor = ScoreTraceColors.BrandPrimary,
-        ),
-    )
+                else -> trailing
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                cursorColor = ScoreTraceColors.BrandPrimary,
+            ),
+        )
+    }
 }
 
 /** 品牌渐变主按钮（#4A90E2 → #2ECC71，圆角 24dp，高 52dp）。 */
@@ -208,11 +240,21 @@ fun AuthSegmentedTabs(
     ) {
         options.forEachIndexed { index, label ->
             val selected = index == selectedIndex
+            val itemBackground by animateColorAsState(
+                targetValue = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
+                animationSpec = tween(durationMillis = 200),
+                label = "tabBackground$index",
+            )
+            val itemTextColor by animateColorAsState(
+                targetValue = if (selected) ScoreTraceColors.BrandPrimary else ScoreTraceColors.TextSecondaryLight,
+                animationSpec = tween(durationMillis = 200),
+                label = "tabText$index",
+            )
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(9.dp))
-                    .background(if (selected) MaterialTheme.colorScheme.surface else Color.Transparent)
+                    .background(itemBackground)
                     .clickable { onSelect(index) }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center,
@@ -221,7 +263,7 @@ fun AuthSegmentedTabs(
                     text = label,
                     fontSize = 14.sp,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (selected) ScoreTraceColors.BrandPrimary else ScoreTraceColors.TextSecondaryLight,
+                    color = itemTextColor,
                 )
             }
         }

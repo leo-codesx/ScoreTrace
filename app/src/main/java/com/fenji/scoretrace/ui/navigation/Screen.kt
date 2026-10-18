@@ -5,6 +5,7 @@ sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object AI : Screen("ai")
     data object Score : Screen("score")
+    data object Tools : Screen("tools")
     data object Mine : Screen("mine")
 
     /** 目标院校选择/编辑：从首页目标院校卡或「我的」页进入，全屏页 */
@@ -27,10 +28,16 @@ sealed class Screen(val route: String) {
     /** 通知中心：从首页铃铛进入，全屏页 */
     data object Notifications : Screen("notifications")
 
+    /** 通知详情：从通知中心列表项进入，携带通知 id */
+    data object NotificationDetail : Screen("notification_detail/{notificationId}") {
+        const val ARG_ID = "notificationId"
+        fun createRoute(id: Long): String = "notification_detail/$id"
+    }
+
     /** 选科配置：从「我的」页进入，全屏页 */
     data object SubjectConfig : Screen("subject_config")
 
-    /** 学习计时器：从首页快捷功能进入，全屏页 */
+    /** 学习计时器：从工具页进入，全屏页 */
     data object StudyTimer : Screen("study_timer")
 
     /** AI 历史对话：从 AI 助手页进入，全屏页 */

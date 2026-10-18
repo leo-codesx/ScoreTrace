@@ -65,6 +65,7 @@ private val SystemGray = Color(0xFF64748B)
 @Composable
 fun NotificationScreen(
     onBack: () -> Unit,
+    onOpenDetail: (Long) -> Unit = {},
     viewModel: NotificationViewModel = hiltViewModel(),
 ) {
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
@@ -130,7 +131,7 @@ fun NotificationScreen(
                         SwipeableNotificationRow(
                             notification = notification,
                             onDelete = { viewModel.delete(notification.id) },
-                            onClick = { viewModel.markRead(notification.id) },
+                            onClick = { onOpenDetail(notification.id) },
                         )
                     }
                 }

@@ -22,6 +22,7 @@ junit = "4.13.2"
 androidxJunit = "1.2.1"
 espressoCore = "3.6.1"
 authing = "1.5.8"
+sonner = "0.4.0"
 
 [libraries]
 # AndroidX 基础
@@ -74,6 +75,9 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
 # 账号系统（Authing Guard SDK：只取底层 AuthClient，不使用其内置 UI）
 authing-guard = { module = "cn.authing:guard", version.ref = "authing" }
+
+# Toast（Compose Sonner：底部弹出 / 堆叠 / 四态 / 深色适配）
+sonner = { module = "io.github.dokar3:sonner", version.ref = "sonner" }
 
 # 测试
 junit = { module = "junit:junit", version.ref = "junit" }

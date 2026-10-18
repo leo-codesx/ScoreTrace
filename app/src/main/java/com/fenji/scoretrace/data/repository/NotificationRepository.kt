@@ -18,6 +18,7 @@ object NotificationType {
 interface NotificationRepository {
     fun observeAll(): Flow<List<NotificationEntity>>
     fun observeUnreadCount(): Flow<Int>
+    fun observeById(id: Long): Flow<NotificationEntity?>
 
     /** 新增一条通知，并顺带清理 30 天前的旧记录 */
     suspend fun add(type: String, title: String, content: String)
@@ -39,6 +40,8 @@ class DefaultNotificationRepository @Inject constructor(
     override fun observeAll(): Flow<List<NotificationEntity>> = notificationDao.observeAll()
 
     override fun observeUnreadCount(): Flow<Int> = notificationDao.observeUnreadCount()
+
+    override fun observeById(id: Long): Flow<NotificationEntity?> = notificationDao.observeById(id)
 
     override suspend fun add(type: String, title: String, content: String) {
         notificationDao.insert(

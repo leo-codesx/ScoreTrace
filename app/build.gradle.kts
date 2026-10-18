@@ -137,6 +137,9 @@ dependencies {
     // 账号系统（Authing Guard SDK）
     implementation(libs.authing.guard)
 
+    // Toast（Compose Sonner）
+    implementation(libs.sonner)
+
     // 测试
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

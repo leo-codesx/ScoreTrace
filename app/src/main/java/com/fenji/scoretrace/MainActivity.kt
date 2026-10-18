@@ -7,6 +7,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,8 +32,10 @@ import com.fenji.scoretrace.data.local.UserPreferences
 import com.fenji.scoretrace.ui.component.AppToastHost
 import com.fenji.scoretrace.ui.component.CrashReportDialogHost
 import com.fenji.scoretrace.ui.navigation.AppNavHost
+import com.fenji.scoretrace.ui.screen.splash.PosterSplash
 import com.fenji.scoretrace.ui.theme.ScoreTraceTheme
 import com.fenji.scoretrace.util.AppLogger
+import com.fenji.scoretrace.util.DateUtils
 import com.fenji.scoretrace.util.LocationHelper
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -60,14 +66,19 @@ class MainActivity : ComponentActivity() {
         // 在「深色/浅色」与系统不一致时出现一次闪色（旧数据 install -r 时更明显）。
         val initialThemeMode = runCatching { runBlocking { userPreferences.themeMode.first() } }
             .getOrDefault("system")
-        // 保持启动画面直到首帧渲染完成：系统 Splash 叠加在已绘制内容之上，不阻塞启动。
-        // 期间 Logo 由系统做「淡入 + 缩放」，冷启动总耗时控制在 3 秒内。
+        // 启动海报上的高考倒计时：优先用用户设置的高考日期，读不到时回退默认日期。
+        val initialGaokaoTimestamp = runCatching { runBlocking { userPreferences.gaokaoTimestamp.first() } }
+            .getOrDefault(DateUtils.defaultGaokaoTimestamp())
+        // 保持系统启动画面到首帧完成即可（海报层会立即接管），避免系统 Splash 遮住海报动画。
         var keepSplash by mutableStateOf(true)
         splashScreen.setKeepOnScreenCondition { keepSplash }
         setContent {
+            var showPoster by remember { mutableStateOf(true) }
             LaunchedEffect(Unit) {
                 delay(SPLASH_MIN_DURATION_MS)
                 keepSplash = false
+                delay(SPLASH_POSTER_DURATION_MS)
+                showPoster = false
             }
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = initialThemeMode)
             val darkTheme = when (themeMode) {
@@ -89,6 +100,13 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.align(Alignment.BottomCenter),
                         )
                         CrashReportDialogHost()
+                        AnimatedVisibility(
+                            visible = showPoster,
+                            enter = fadeIn(animationSpec = tween(durationMillis = 0)),
+                            exit = fadeOut(animationSpec = tween(durationMillis = 450)),
+                        ) {
+                            PosterSplash(gaokaoTimestamp = initialGaokaoTimestamp)
+                        }
                     }
                 }
             }
@@ -128,7 +146,10 @@ class MainActivity : ComponentActivity() {
             PackageManager.PERMISSION_GRANTED
 
     private companion object {
-        /** 启动画面最短展示时长：Logo 淡入+缩放的可见时间，冷启动总耗时仍控制在 3 秒内。 */
-        const val SPLASH_MIN_DURATION_MS = 1500L
+        /** 系统 Splash 最短展示时长：只覆盖首帧，随后交给海报层。 */
+        const val SPLASH_MIN_DURATION_MS = 300L
+
+        /** 海报层停留时长（不含淡出）。 */
+        const val SPLASH_POSTER_DURATION_MS = 2000L
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -74,6 +75,13 @@ fun AiWelcomeHero(
             Box(
                 modifier = Modifier
                     .size(88.dp)
+                    .shadow(
+                        elevation = 16.dp,
+                        shape = RoundedCornerShape(24.dp),
+                        clip = false,
+                        ambientColor = ScoreTraceColors.AccentCyan.copy(alpha = 0.30f),
+                        spotColor = ScoreTraceColors.AccentBlue.copy(alpha = 0.42f),
+                    )
                     .clip(RoundedCornerShape(24.dp))
                     .background(Brush.linearGradient(ScoreTraceColors.AiGradient)),
                 contentAlignment = Alignment.Center,

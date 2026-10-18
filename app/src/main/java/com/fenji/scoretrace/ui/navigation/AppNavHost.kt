@@ -60,6 +60,7 @@ import com.fenji.scoretrace.ui.screen.mine.DeveloperOptionsScreen
 import com.fenji.scoretrace.ui.screen.mine.FeedbackScreen
 import com.fenji.scoretrace.ui.screen.mine.LegalDocumentScreen
 import com.fenji.scoretrace.ui.screen.mine.MineScreen
+import com.fenji.scoretrace.ui.screen.notification.NotificationDetailScreen
 import com.fenji.scoretrace.ui.screen.notification.NotificationScreen
 import com.fenji.scoretrace.ui.screen.school.TargetSchoolScreen
 import com.fenji.scoretrace.ui.screen.score.AiScoreInputScreen
@@ -68,6 +69,7 @@ import com.fenji.scoretrace.ui.screen.score.ScoreDetailScreen
 import com.fenji.scoretrace.ui.screen.score.ScoreScreenNew
 import com.fenji.scoretrace.ui.screen.subject.SubjectConfigScreen
 import com.fenji.scoretrace.ui.screen.timer.StudyTimerScreen
+import com.fenji.scoretrace.ui.screen.tools.ToolsScreen
 import com.fenji.scoretrace.util.AppToast
 
 /**
@@ -105,6 +107,7 @@ fun AppNavHost(
         currentRoute == Screen.AiScoreInput.route ||
         currentRoute?.startsWith("manual_score_input") == true ||
         currentRoute == Screen.Notifications.route ||
+        currentRoute?.startsWith("notification_detail") == true ||
         currentRoute == Screen.SubjectConfig.route ||
         currentRoute == Screen.StudyTimer.route ||
         currentRoute == Screen.AiHistory.route ||
@@ -145,11 +148,18 @@ fun AppNavHost(
         BottomBarTab(Screen.Home, R.string.tab_home, rememberVectorPainter(Icons.Filled.Home)),
         BottomBarTab(Screen.AI, R.string.tab_ai, painterResource(R.drawable.ic_ai_logo)),
         BottomBarTab(Screen.Score, R.string.tab_score, painterResource(R.drawable.ic_bar_chart)),
+        BottomBarTab(Screen.Tools, R.string.tab_tools, painterResource(R.drawable.ic_auto_awesome)),
         BottomBarTab(Screen.Mine, R.string.tab_mine, rememberVectorPainter(Icons.Filled.Person)),
     )
 
-    // 返回键：四个底部 Tab 上连按两次退出应用；其余子页面（成绩详情/目标院校/设置等）返回上一页。
-    val topLevelRoutes = listOf(Screen.Home.route, Screen.AI.route, Screen.Score.route, Screen.Mine.route)
+    // 返回键：五个底部 Tab 上连按两次退出应用；其余子页面（成绩详情/目标院校/设置等）返回上一页。
+    val topLevelRoutes = listOf(
+        Screen.Home.route,
+        Screen.AI.route,
+        Screen.Score.route,
+        Screen.Tools.route,
+        Screen.Mine.route,
+    )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
     val context = LocalContext.current
     BackHandler {
@@ -235,7 +245,6 @@ fun AppNavHost(
                     onOpenAiScore = { navController.navigate(Screen.AiScoreInput.createRoute()) },
                     onOpenManualScore = { navController.navigate(Screen.ManualScoreInput.createRoute()) },
                     onOpenNotification = { navController.navigate(Screen.Notifications.route) },
-                    onOpenTimer = { navController.navigate(Screen.StudyTimer.route) },
                 )
             }
             composable(
@@ -278,6 +287,17 @@ fun AppNavHost(
                     onOpenDetail = { examId ->
                         navController.navigate(Screen.ScoreDetail.createRoute(examId))
                     },
+                )
+            }
+            composable(
+                route = Screen.Tools.route,
+                enterTransition = { tabEnter() },
+                exitTransition = { tabExit() },
+                popEnterTransition = { tabEnter() },
+                popExitTransition = { tabExit() },
+            ) {
+                ToolsScreen(
+                    onOpenTimer = { navController.navigate(Screen.StudyTimer.route) },
                 )
             }
             composable(
@@ -351,7 +371,20 @@ fun AppNavHost(
                 )
             }
             composable(Screen.Notifications.route) {
-                NotificationScreen(onBack = { navController.popBackStack() })
+                NotificationScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenDetail = { id ->
+                        navController.navigate(Screen.NotificationDetail.createRoute(id))
+                    },
+                )
+            }
+            composable(
+                route = Screen.NotificationDetail.route,
+                arguments = listOf(
+                    navArgument(Screen.NotificationDetail.ARG_ID) { type = NavType.LongType },
+                ),
+            ) {
+                NotificationDetailScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.StudyTimer.route) {
                 StudyTimerScreen(onBack = { navController.popBackStack() })

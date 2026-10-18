@@ -38,6 +38,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fenji.scoretrace.ui.theme.Dimensions
 import com.fenji.scoretrace.ui.theme.ScoreTraceColors
 
 /**
@@ -83,16 +84,16 @@ fun AiInputBar(
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(Dimensions.CircleButton)
                     .clip(CircleShape)
-                    .background(ScoreTraceColors.PageBackgroundLight)
+                    .background(Brush.linearGradient(ScoreTraceColors.AiGradient))
                     .clickable(onClick = onAddClick),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "添加",
-                    tint = ScoreTraceColors.TextSecondaryLight,
+                    tint = Color.White,
                     modifier = Modifier.size(22.dp),
                 )
             }
@@ -137,7 +138,7 @@ fun AiInputBar(
 
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(Dimensions.CircleButton)
                     .scale(sendScale)
                     .clip(CircleShape)
                     .background(

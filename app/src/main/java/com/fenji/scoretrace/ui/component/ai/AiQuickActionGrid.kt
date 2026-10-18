@@ -1,6 +1,7 @@
 package com.fenji.scoretrace.ui.component.ai
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fenji.scoretrace.ui.screen.ai.AiQuickAction
+import com.fenji.scoretrace.ui.theme.CardShape
 import com.fenji.scoretrace.ui.theme.ScoreTraceColors
 
 /**
@@ -75,13 +77,20 @@ private fun QuickActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = CardShape
     Column(
         modifier = modifier
             .height(128.dp)
-            .shadow(elevation = 3.dp, shape = shape, clip = false)
+            .shadow(
+                elevation = 6.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = ScoreTraceColors.BrandPrimary.copy(alpha = 0.06f),
+                spotColor = ScoreTraceColors.BrandPrimary.copy(alpha = 0.08f),
+            )
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f), shape)
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalArrangement = Arrangement.SpaceBetween,

@@ -16,6 +16,9 @@ interface NotificationDao {
     @Query("SELECT COUNT(*) FROM notifications WHERE isRead = 0")
     fun observeUnreadCount(): Flow<Int>
 
+    @Query("SELECT * FROM notifications WHERE id = :id")
+    fun observeById(id: Long): Flow<NotificationEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(notification: NotificationEntity): Long
 

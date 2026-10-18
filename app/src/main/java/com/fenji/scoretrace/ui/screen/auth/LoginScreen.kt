@@ -1,5 +1,10 @@
 package com.fenji.scoretrace.ui.screen.auth
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -123,75 +128,86 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                if (channelIndex == 0) {
-                    AuthTextField(
-                        value = phone,
-                        onValueChange = { phone = it.filter(Char::isDigit).take(11) },
-                        placeholder = "手机号",
-                        keyboardType = KeyboardType.Phone,
-                        imeAction = if (phoneModeIndex == 0) ImeAction.Next else ImeAction.Done,
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    if (phoneModeIndex == 0) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                AnimatedContent(
+                    targetState = channelIndex,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(180)) togetherWith
+                            fadeOut(animationSpec = tween(120))
+                    },
+                    label = "authChannel",
+                ) { channel ->
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (channel == 0) {
                             AuthTextField(
-                                value = phoneCode,
-                                onValueChange = { phoneCode = it.filter(Char::isDigit).take(6) },
-                                placeholder = "验证码",
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done,
-                                modifier = Modifier.weight(1f),
+                                value = phone,
+                                onValueChange = { phone = it.filter(Char::isDigit).take(11) },
+                                placeholder = "手机号",
+                                keyboardType = KeyboardType.Phone,
+                                imeAction = if (phoneModeIndex == 0) ImeAction.Next else ImeAction.Done,
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            AuthCodeButton(
-                                countdown = state.phoneCountdown,
-                                enabled = !state.isLoading && isOnline,
-                                onClick = { viewModel.sendSmsCode(phone) },
+                            Spacer(modifier = Modifier.height(12.dp))
+                            if (phoneModeIndex == 0) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    AuthTextField(
+                                        value = phoneCode,
+                                        onValueChange = { phoneCode = it.filter(Char::isDigit).take(6) },
+                                        placeholder = "验证码",
+                                        keyboardType = KeyboardType.Number,
+                                        imeAction = ImeAction.Done,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    AuthCodeButton(
+                                        countdown = state.phoneCountdown,
+                                        enabled = !state.isLoading && isOnline,
+                                        onClick = { viewModel.sendSmsCode(phone) },
+                                    )
+                                }
+                            } else {
+                                AuthTextField(
+                                    value = password,
+                                    onValueChange = { password = it },
+                                    placeholder = "密码（至少 8 位）",
+                                    isPassword = true,
+                                    imeAction = ImeAction.Done,
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = if (phoneModeIndex == 0) "使用密码登录" else "使用验证码登录",
+                                fontSize = 14.sp,
+                                color = ScoreTraceColors.BrandPrimary,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .align(Alignment.End)
+                                    .clickable { phoneModeIndex = 1 - phoneModeIndex },
                             )
+                        } else {
+                            AuthTextField(
+                                value = email,
+                                onValueChange = { email = it.trim() },
+                                placeholder = "邮箱地址",
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next,
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AuthTextField(
+                                    value = emailCode,
+                                    onValueChange = { emailCode = it.filter(Char::isDigit).take(6) },
+                                    placeholder = "验证码",
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                AuthCodeButton(
+                                    countdown = state.emailCountdown,
+                                    enabled = !state.isLoading && isOnline,
+                                    onClick = { viewModel.sendEmailCode(email) },
+                                )
+                            }
                         }
-                    } else {
-                        AuthTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            placeholder = "密码（至少 8 位）",
-                            isPassword = true,
-                            imeAction = ImeAction.Done,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = if (phoneModeIndex == 0) "使用密码登录" else "使用验证码登录",
-                        fontSize = 14.sp,
-                        color = ScoreTraceColors.BrandPrimary,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .clickable { phoneModeIndex = 1 - phoneModeIndex },
-                    )
-                } else {
-                    AuthTextField(
-                        value = email,
-                        onValueChange = { email = it.trim() },
-                        placeholder = "邮箱地址",
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next,
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AuthTextField(
-                            value = emailCode,
-                            onValueChange = { emailCode = it.filter(Char::isDigit).take(6) },
-                            placeholder = "验证码",
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        AuthCodeButton(
-                            countdown = state.emailCountdown,
-                            enabled = !state.isLoading && isOnline,
-                            onClick = { viewModel.sendEmailCode(email) },
-                        )
                     }
                 }
 

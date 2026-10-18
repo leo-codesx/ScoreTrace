@@ -73,7 +73,6 @@ fun HomeScreen(
     onOpenAiScore: () -> Unit = {},
     onOpenManualScore: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
-    onOpenTimer: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -161,7 +160,6 @@ fun HomeScreen(
         onDetailClick = onOpenScore,
         onOpenAiScore = onOpenAiScore,
         onOpenManualScore = onOpenManualScore,
-        onOpenTimer = onOpenTimer,
         onRefreshAiFocus = onRefreshAiFocus,
     )
 
@@ -289,7 +287,6 @@ private fun HomeScreenContent(
     onDetailClick: () -> Unit,
     onOpenAiScore: () -> Unit,
     onOpenManualScore: () -> Unit,
-    onOpenTimer: () -> Unit,
     onRefreshAiFocus: () -> Unit,
 ) {
     Column(
@@ -391,12 +388,6 @@ private fun HomeScreenContent(
                             icon = painterResource(R.drawable.ic_photo_camera),
                             color = ScoreTraceColors.QuickActionBlue,
                             onClick = onOpenAiScore,
-                        ),
-                        QuickAction(
-                            label = "学习计时器",
-                            icon = painterResource(R.drawable.ic_timer),
-                            color = ScoreTraceColors.QuickActionGreen,
-                            onClick = onOpenTimer,
                         ),
                     ),
                     modifier = Modifier.padding(horizontal = 12.dp),
