@@ -16,6 +16,12 @@
 # 会导致 TargetSchoolScreen 读 school.level/schools 时 NPE 闪退（release 专属）。
 -keep class com.fenji.scoretrace.data.model.** { *; }
 
+# Gson 反射模型：一分一段表与音乐歌单缓存（字段名必须保留）
+-keep class com.fenji.scoretrace.data.repository.ScoreSectionData { *; }
+-keep class com.fenji.scoretrace.data.repository.ScoreSectionTable { *; }
+-keep class com.fenji.scoretrace.data.repository.ScoreSectionEntry { *; }
+-keep class com.fenji.scoretrace.data.player.TrackInfo { *; }
+
 # OkHttp 平台相关可选项缺失时的警告忽略
 -dontwarn okhttp3.**
 -dontwarn okio.**
