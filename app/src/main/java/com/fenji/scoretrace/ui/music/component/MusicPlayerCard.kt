@@ -306,7 +306,7 @@ fun MusicPlaylistSheet(
                     modifier = Modifier.heightIn(max = 400.dp),
                     contentPadding = PaddingValues(vertical = 4.dp),
                 ) {
-                    itemsIndexed(tracks, key = { _, track -> track.id }) { index, track ->
+                    itemsIndexed(tracks, key = { _, track -> track.id }, contentType = { _, _ -> "track" }) { index, track ->
                         PlaylistItem(
                             track = track,
                             index = index,

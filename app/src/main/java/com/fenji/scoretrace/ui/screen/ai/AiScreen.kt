@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -68,6 +69,7 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiScreen(
+    bottomPadding: Dp = 0.dp,
     onOpenHistory: () -> Unit = {},
     onOpenAiScore: (pickImage: Boolean) -> Unit = {},
     loadConversationId: Long = -1L,
@@ -113,6 +115,7 @@ fun AiScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(bottom = bottomPadding)
                 .imePadding(),
         ) {
             AiTopBar(
@@ -233,7 +236,7 @@ private fun ChatList(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(messages, key = { it.id }) { message ->
+        items(messages, key = { it.id }, contentType = { "message" }) { message ->
             ChatBubble(
                 message = message,
                 modifier = Modifier.animateItem(fadeInSpec = tween(durationMillis = 220)),

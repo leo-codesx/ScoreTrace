@@ -131,6 +131,32 @@ class MusicPlayerManager @Inject constructor(
     private val _playlist = MutableStateFlow(musicCache.loadPlaylist() ?: DEFAULT_PLAYLIST)
     val playlist: StateFlow<List<TrackInfo>> = _playlist.asStateFlow()
 
+    /**
+     * 当前界面是否允许出声：主页为 true，启动海报与登录页为 false。
+     * 与「用户是否手动暂停」无关，只用来约束后台恢复与静默页面的播放。
+     */
+    private var playbackAllowed = false
+
+    /** 已创建则返回现有实例，否则创建（只在主线程调用）。 */
+    fun ensurePlayer(): ExoPlayer = exoPlayer
+
+    /** 只读：未创建时返回 null，避免进度轮询/后台回调凭空拉起播放器。 */
+    fun peekPlayer(): ExoPlayer? = _exoPlayer
+
+    /**
+     * 页面切换时更新「是否允许出声」。
+     * 进入静默页面立即暂停，并清掉待恢复标记，避免回到前台后又在登录页出声。
+     */
+    fun setPlaybackAllowed(allowed: Boolean) {
+        if (!requireMainThread()) return
+        if (playbackAllowed == allowed) return
+        playbackAllowed = allowed
+        if (!allowed) {
+            wasPlayingBeforeBackground = false
+            pause()
+        }
+    }
+
     val exoPlayer: ExoPlayer
         get() {
             if (_exoPlayer == null) {
@@ -272,8 +298,12 @@ class MusicPlayerManager @Inject constructor(
         if (wasPlayingBeforeBackground) pause()
     }
 
-    /** 应用回到前台：只恢复"上次是被自动暂停的"播放，用户手动暂停过的保持暂停。 */
+    /** 应用回到前台：只恢复"上次是被自动暂停的"播放，且当前界面允许出声。 */
     fun onAppForeground() {
+        if (!playbackAllowed) {
+            wasPlayingBeforeBackground = false
+            return
+        }
         if (wasPlayingBeforeBackground) {
             wasPlayingBeforeBackground = false
             play()

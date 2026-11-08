@@ -65,6 +65,7 @@ import kotlinx.coroutines.flow.first
 @Composable
 fun HomeScreen(
     musicViewModel: MusicPlayerViewModel,
+    contentReady: Boolean = true,
     showMusicPanel: Boolean,
     onMusicPanelChange: (Boolean) -> Unit,
     bottomContentPadding: Dp = Dimens.ContentBottom,
@@ -96,10 +97,12 @@ fun HomeScreen(
     // 返回键优先关面板，而不是退出应用（AppNavHost 的返回处理在面板关闭后才生效）
     BackHandler(enabled = showMusicPanel) { onMusicPanelChange(false) }
 
-    // 每次进入 App 只触发一次自动播放；切回首页不再 play()，所以不会打断正在播放的音乐
-    LaunchedEffect(Unit) {
+    // 启动海报消失（contentReady）后才允许初始化播放器并自动播放；
+    // 首页在启动海报下层就已组合，若只按 LaunchedEffect(Unit) 触发，音乐会在海报阶段就出声。
+    LaunchedEffect(contentReady) {
+        if (!contentReady) return@LaunchedEffect
         val ready = viewModel.uiState.filter { !it.isLoading }.first()
-        musicViewModel.autoPlayOnce(enabled = ready.autoPlayMusic)
+        musicViewModel.onHomeEntered(enabled = ready.autoPlayMusic)
     }
 
     // 悬浮面板：进度/循环/随机/收藏都在这里订阅——面板未展开时这段不组合，

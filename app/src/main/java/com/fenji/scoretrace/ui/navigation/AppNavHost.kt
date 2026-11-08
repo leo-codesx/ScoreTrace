@@ -13,26 +13,31 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -74,7 +79,13 @@ import com.fenji.scoretrace.ui.screen.tools.MajorExplorerScreen
 import com.fenji.scoretrace.ui.screen.tools.ScoreConvertScreen
 import com.fenji.scoretrace.ui.screen.tools.ScoreSectionScreen
 import com.fenji.scoretrace.ui.screen.tools.ToolsScreen
+import com.fenji.scoretrace.ui.theme.LocalEnableBlur
+import com.fenji.scoretrace.ui.theme.LocalEnableFloatingBottomBar
+import com.fenji.scoretrace.ui.theme.LocalEnableLiquidGlass
+import com.fenji.scoretrace.ui.theme.LocalEnablePredictiveBack
 import com.fenji.scoretrace.util.AppToast
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import kotlinx.coroutines.CancellationException
@@ -93,12 +104,13 @@ fun AppNavHost(
     navController: NavHostController = rememberNavController(),
     musicViewModel: MusicPlayerViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
-    enableBlur: Boolean = true,
-    enableFloatingBottomBar: Boolean = true,
-    enableLiquidGlass: Boolean = true,
-    enablePredictiveBack: Boolean = true,
+    contentReady: Boolean = true,
     onBottomBarVisibleChange: (Boolean) -> Unit = {},
 ) {
+    val enableBlur = LocalEnableBlur.current
+    val enableFloatingBottomBar = LocalEnableFloatingBottomBar.current
+    val enableLiquidGlass = LocalEnableLiquidGlass.current
+    val enablePredictiveBack = LocalEnablePredictiveBack.current
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     // 强制登录：起始页由「同步读到的登录态」决定（AuthViewModel 初值即同步），
@@ -134,7 +146,19 @@ fun AppNavHost(
         currentRoute == Screen.UserAgreement.route ||
         (currentRoute == Screen.AI.route && imeVisible)
 
+    // 悬浮底栏高度 = 6dp 上边距 + 52dp Pill + 6dp 下边距 + 系统导航栏；不随内容变化。
+    // 内容区不再让 Scaffold 扣除这段高度，而是自己延伸到 Pill 后方，Haze/液态玻璃才有可采样的背板。
+    val barBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bottomContentPadding = if (hideBottomBar) 0.dp else 64.dp + barBottomPadding + 16.dp
+
     LaunchedEffect(hideBottomBar) { onBottomBarVisibleChange(!hideBottomBar) }
+
+    // 启动海报与登录页必须静默：首页虽然已在启动海报下方组合，但只有 contentReady 后才允许出声。
+    LaunchedEffect(contentReady, currentRoute, authState.isLoggedIn) {
+        if (!contentReady || !authState.isLoggedIn || currentRoute == Screen.Login.route) {
+            musicViewModel.enterSilentSurface()
+        }
+    }
 
     // 首次登录成功后检测本机未绑定账号的数据，弹窗询问是否迁移。
     LaunchedEffect(authState.isLoggedIn) {
@@ -175,16 +199,19 @@ fun AppNavHost(
         Screen.Mine.route,
     )
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
+    var predictiveBackProgress by remember { mutableFloatStateOf(0f) }
     val context = LocalContext.current
     if (enablePredictiveBack && currentRoute != null &&
         currentRoute !in topLevelRoutes && currentRoute != Screen.Login.route
     ) {
         PredictiveBackHandler { progress ->
             try {
-                progress.collect { }
+                // 直接驱动页面缩放/淡出，手势中途取消时复位，不留下半透明页面
+                progress.collect { predictiveBackProgress = it.progress }
+                predictiveBackProgress = 0f
                 navController.popBackStack()
             } catch (_: CancellationException) {
-                // 手势取消：保持当前页面
+                predictiveBackProgress = 0f
             }
         }
     } else {
@@ -205,6 +232,13 @@ fun AppNavHost(
     }
 
     val hazeState = remember { HazeState() }
+    // 液态玻璃的采样源：先把页面底色铺满（透明区域不会糊成色斑），再录内容。
+    // onDraw 不是 @Composable，颜色必须在 lambda 外读好。
+    val screenBackground = MaterialTheme.colorScheme.background
+    val screenBackdrop = rememberLayerBackdrop {
+        drawRect(screenBackground)
+        drawContent()
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -219,6 +253,7 @@ fun AppNavHost(
                             navController.navigateToTab(it)
                         },
                         hazeState = if (enableBlur) hazeState else null,
+                        screenBackdrop = if (enableLiquidGlass) screenBackdrop else null,
                         blurEnabled = enableBlur,
                         liquidGlassEnabled = enableLiquidGlass,
                     )
@@ -235,7 +270,7 @@ fun AppNavHost(
                 }
             }
         },
-        // 顶部由 Scaffold 处理状态栏，底部由 bottomBar 槽位自动从内容区扣除
+        // 顶部由 Scaffold 处理状态栏；底部不再扣除底栏高度，内容延伸到 Pill 后方供模糊/折射采样
         contentWindowInsets = WindowInsets.statusBars,
     ) { innerPadding ->
         NavHost(
@@ -243,8 +278,17 @@ fun AppNavHost(
             startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .then(if (enableBlur) Modifier.haze(hazeState) else Modifier),
+                .padding(top = innerPadding.calculateTopPadding())
+                .graphicsLayer {
+                    val progress = predictiveBackProgress
+                    val scale = 1f - 0.06f * progress
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = -24.dp.toPx() * progress
+                    alpha = 1f - 0.25f * progress
+                }
+                .then(if (enableBlur) Modifier.haze(hazeState) else Modifier)
+                .then(if (enableLiquidGlass) Modifier.layerBackdrop(screenBackdrop) else Modifier),
             // 进入二级页：新页从右整幅滑入，当前页只向左退 1/3 并淡出（视差，显得更顺滑）
             enterTransition = {
                 slideInHorizontally(
@@ -282,8 +326,10 @@ fun AppNavHost(
             ) {
                 HomeScreen(
                     musicViewModel = musicViewModel,
+                    contentReady = contentReady,
                     showMusicPanel = showMusicPanel,
                     onMusicPanelChange = { showMusicPanel = it },
+                    bottomContentPadding = bottomContentPadding,
                     onOpenScore = { navController.navigateToTab(Screen.Score) },
                     onOpenTargetSchool = { navController.navigate(Screen.TargetSchool.route) },
                     onOpenAiScore = { navController.navigate(Screen.AiScoreInput.createRoute()) },
@@ -305,6 +351,7 @@ fun AppNavHost(
                     .getStateFlow(KEY_NEW_CHAT, 0L)
                     .collectAsStateWithLifecycle()
                 AiScreen(
+                    bottomPadding = if (hideBottomBar) 0.dp else bottomContentPadding,
                     onOpenHistory = { navController.navigate(Screen.AiHistory.route) },
                     onOpenAiScore = { pickImage ->
                         navController.navigate(Screen.AiScoreInput.createRoute(pickImage))
@@ -327,6 +374,7 @@ fun AppNavHost(
                 popExitTransition = { tabExit() },
             ) {
                 ScoreScreenNew(
+                    bottomContentPadding = bottomContentPadding,
                     onOpenAi = { navController.navigateToTab(Screen.AI) },
                     onOpenDetail = { examId ->
                         navController.navigate(Screen.ScoreDetail.createRoute(examId))
@@ -341,6 +389,7 @@ fun AppNavHost(
                 popExitTransition = { tabExit() },
             ) {
                 ToolsScreen(
+                    bottomContentPadding = bottomContentPadding,
                     onOpenScoreConvert = { navController.navigate(Screen.ScoreConvert.route) },
                     onOpenScoreSection = { navController.navigate(Screen.ScoreSection.route) },
                     onOpenMajorExplorer = { navController.navigate(Screen.MajorExplorer.route) },
@@ -372,6 +421,7 @@ fun AppNavHost(
                 popExitTransition = { tabExit() },
             ) {
                 MineScreen(
+                    bottomContentPadding = bottomContentPadding,
                     onOpenTargetSchool = { navController.navigate(Screen.TargetSchool.route) },
                     onOpenSubjectConfig = { navController.navigate(Screen.SubjectConfig.route) },
                     onOpenAbout = { navController.navigate(Screen.About.route) },

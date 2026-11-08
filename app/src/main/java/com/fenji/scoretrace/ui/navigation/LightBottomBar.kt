@@ -2,6 +2,7 @@ package com.fenji.scoretrace.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.runtime.Immutable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +28,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** 底部导航项：图标用 [Painter]（core 图标走 rememberVectorPainter，缺失图标走本地矢量 drawable）。 */
+/**
+ * 底部导航项：图标用 [Painter]（core 图标走 rememberVectorPainter，缺失图标走本地矢量 drawable）。
+ * 标 @Immutable 让底栏在按压/切换时按下标跳过未变化的条目。
+ */
+@Immutable
 data class BottomBarTab(
     val screen: Screen,
     @param:StringRes val labelRes: Int,

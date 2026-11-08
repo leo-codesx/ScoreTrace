@@ -26,6 +26,7 @@ import com.fenji.scoretrace.util.rankRecordFor
 import com.fenji.scoretrace.util.observeOnlineStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -118,11 +120,14 @@ class HomeViewModel @Inject constructor(
             scoreDelta = summary.delta,
             isLoading = false,
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = HomeUiState(),
-    )
+    }
+        // 成绩聚合（分组、去重、排名收敛）在主线程之外算，数据量大时不抢帧
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = HomeUiState(),
+        )
 
     /** 未读通知数：驱动首页铃铛红点的显示/隐藏 */
     val unreadCount: StateFlow<Int> = notificationRepository.observeUnreadCount()
@@ -230,11 +235,14 @@ class HomeViewModel @Inject constructor(
                 color = colorForSubject(name),
             )
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = REQUIRED_SUBJECTS.map { SubjectScore(it, 0f, colorForSubject(it)) },
-    )
+    }
+        .flowOn(Dispatchers.Default)
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = REQUIRED_SUBJECTS.map { SubjectScore(it, 0f, colorForSubject(it)) },
+        )
 
     fun deleteTargetSchool(entity: TargetSchool) {
         viewModelScope.launch { targetSchoolRepository.delete(entity) }

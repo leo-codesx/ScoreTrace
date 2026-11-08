@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fenji.scoretrace.R
@@ -48,6 +49,7 @@ fun ToolsScreen(
     onOpenScoreConvert: () -> Unit,
     onOpenScoreSection: () -> Unit,
     onOpenMajorExplorer: () -> Unit,
+    bottomContentPadding: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -80,7 +82,7 @@ fun ToolsScreen(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = Dimensions.SpacingMedium)
-                    .padding(bottom = Dimensions.SpacingLarge),
+                    .padding(bottom = Dimensions.SpacingLarge + bottomContentPadding),
                 verticalArrangement = Arrangement.spacedBy(Dimensions.SpacingSmall),
             ) {
                 ScoreConvertHeroCard(onClick = onOpenScoreConvert)

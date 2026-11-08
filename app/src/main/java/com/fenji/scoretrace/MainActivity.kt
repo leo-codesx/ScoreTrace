@@ -92,14 +92,20 @@ class MainActivity : ComponentActivity() {
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = initialThemeMode)
             val enableBlur by userPreferences.enableBlur.collectAsStateWithLifecycle(initialValue = true)
             val enableFloatingBottomBar by userPreferences.enableFloatingBottomBar.collectAsStateWithLifecycle(initialValue = true)
-            val enableLiquidGlass by userPreferences.enableLiquidGlass.collectAsStateWithLifecycle(initialValue = true)
+            val enableLiquidGlass by userPreferences.enableLiquidGlass.collectAsStateWithLifecycle(initialValue = false)
             val enablePredictiveBack by userPreferences.enablePredictiveBack.collectAsStateWithLifecycle(initialValue = true)
             val darkTheme = when (themeMode) {
                 "light" -> false
                 "dark" -> true
                 else -> isSystemInDarkTheme()
             }
-            ScoreTraceTheme(darkTheme = darkTheme) {
+            ScoreTraceTheme(
+                darkTheme = darkTheme,
+                enableBlur = enableBlur,
+                enableFloatingBottomBar = enableFloatingBottomBar,
+                enableLiquidGlass = enableLiquidGlass,
+                enablePredictiveBack = enablePredictiveBack,
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
@@ -108,10 +114,7 @@ class MainActivity : ComponentActivity() {
                         // 底栏可见性由 AppNavHost 回传，供 Toast 定位避让底栏
                         var bottomBarVisible by remember { mutableStateOf(true) }
                         AppNavHost(
-                            enableBlur = enableBlur,
-                            enableFloatingBottomBar = enableFloatingBottomBar,
-                            enableLiquidGlass = enableLiquidGlass,
-                            enablePredictiveBack = enablePredictiveBack,
+                            contentReady = !showSplash,
                             onBottomBarVisibleChange = { bottomBarVisible = it },
                         )
                         AppToastHost(

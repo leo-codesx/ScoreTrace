@@ -61,9 +61,9 @@ class UserPreferences @Inject constructor(
         context.dataStore.edit { it[KEY_ENABLE_FLOATING_BOTTOM_BAR] = enabled }
     }
 
-    /** 悬浮底栏液态玻璃 */
+    /** 悬浮底栏液态玻璃：默认关闭，回退到干净的半透明胶囊 */
     val enableLiquidGlass: Flow<Boolean> =
-        context.dataStore.data.map { it[KEY_ENABLE_LIQUID_GLASS] ?: true }
+        context.dataStore.data.map { it[KEY_ENABLE_LIQUID_GLASS] ?: false }
     suspend fun setEnableLiquidGlass(enabled: Boolean) {
         context.dataStore.edit { it[KEY_ENABLE_LIQUID_GLASS] = enabled }
     }

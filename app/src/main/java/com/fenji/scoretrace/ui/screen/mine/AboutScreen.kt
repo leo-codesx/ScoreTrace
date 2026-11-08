@@ -265,7 +265,7 @@ private fun OpenSourceLicensesSheet(onDismiss: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(12.dp))
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(OPEN_SOURCE_LIBRARIES) { lib ->
+                items(OPEN_SOURCE_LIBRARIES, contentType = { "library" }) { lib ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

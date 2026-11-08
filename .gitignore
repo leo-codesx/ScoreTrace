@@ -14,6 +14,10 @@ local.properties
 *.iml
 .DS_Store
 
+# 签名密钥
+*.jks
+*.keystore
+
 # AI 配置：子代理与技能随仓库提交，记忆/附件等本地状态不提交
 .aicode/*
 !.aicode/agents/

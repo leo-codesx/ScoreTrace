@@ -17,8 +17,8 @@ android {
         applicationId = "com.fenji.scoretrace"
         minSdk = 33
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -148,6 +148,7 @@ dependencies {
 
     // KernelSU 风格模糊 / 液态玻璃
     implementation(libs.haze)
+    implementation(libs.kyant.backdrop)
 
     // 测试
     testImplementation(libs.junit)

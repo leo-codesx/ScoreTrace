@@ -80,11 +80,27 @@ private val DarkColors = darkColorScheme(
  */
 val LocalAppDarkTheme = compositionLocalOf { false }
 
+/** KernelSU 风格模糊开关：顶栏/底栏背板模糊 */
+val LocalEnableBlur = compositionLocalOf { true }
+
+/** KernelSU 风格悬浮 Pill 底栏开关 */
+val LocalEnableFloatingBottomBar = compositionLocalOf { true }
+
+/** 悬浮底栏液态玻璃（折射/高光）开关：默认关闭，折射依赖全屏背板录制，部分机型上渲染异常且掉帧 */
+val LocalEnableLiquidGlass = compositionLocalOf { false }
+
+/** 预测性返回手势开关 */
+val LocalEnablePredictiveBack = compositionLocalOf { true }
+
 @Composable
 fun ScoreTraceTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // 默认关闭动态取色，保证品牌色一致；需要时打开即可
     dynamicColor: Boolean = false,
+    enableBlur: Boolean = true,
+    enableFloatingBottomBar: Boolean = true,
+    enableLiquidGlass: Boolean = false,
+    enablePredictiveBack: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
@@ -97,7 +113,13 @@ fun ScoreTraceTheme(
         else -> LightColors
     }
 
-    CompositionLocalProvider(LocalAppDarkTheme provides darkTheme) {
+    CompositionLocalProvider(
+        LocalAppDarkTheme provides darkTheme,
+        LocalEnableBlur provides enableBlur,
+        LocalEnableFloatingBottomBar provides enableFloatingBottomBar,
+        LocalEnableLiquidGlass provides enableLiquidGlass,
+        LocalEnablePredictiveBack provides enablePredictiveBack,
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = AppTypography,

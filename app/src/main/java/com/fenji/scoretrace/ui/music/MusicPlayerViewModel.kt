@@ -34,17 +34,15 @@ class MusicPlayerViewModel @Inject constructor(
 
     private val player: Player get() = playerManager.exoPlayer
 
-    private val _currentIndex = MutableStateFlow(player.currentMediaItemIndex)
+    private val _currentIndex = MutableStateFlow(0)
     val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
 
     private val _currentTrack = MutableStateFlow(
-        playerManager.playlist.value.getOrElse(player.currentMediaItemIndex) {
-            playerManager.playlist.value.firstOrNull() ?: DEFAULT_PLAYLIST.first()
-        },
+        playerManager.playlist.value.firstOrNull() ?: DEFAULT_PLAYLIST.first(),
     )
     val currentTrack: StateFlow<TrackInfo> = _currentTrack.asStateFlow()
 
-    private val _isPlaying = MutableStateFlow(player.isPlaying)
+    private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -56,10 +54,10 @@ class MusicPlayerViewModel @Inject constructor(
     private val _duration = MutableStateFlow(0L)
     val duration: StateFlow<Long> = _duration.asStateFlow()
 
-    private val _repeatMode = MutableStateFlow(player.repeatMode.toUiRepeatMode())
+    private val _repeatMode = MutableStateFlow(RepeatMode.ALL)
     val repeatMode: StateFlow<RepeatMode> = _repeatMode.asStateFlow()
 
-    private val _shuffleMode = MutableStateFlow(player.shuffleModeEnabled)
+    private val _shuffleMode = MutableStateFlow(false)
     val shuffleMode: StateFlow<Boolean> = _shuffleMode.asStateFlow()
 
     private val _favorites = MutableStateFlow<Set<String>>(emptySet())
@@ -98,19 +96,49 @@ class MusicPlayerViewModel @Inject constructor(
     /** 本次界面存活期间是否已经处理过「进入应用自动播放」，避免切回首页时重复触发 */
     private var autoPlayHandled = false
 
-    init {
-        playerManager.loadRemotePlaylistOnce()
-        player.addListener(listener)
-        // 500ms 轮询播放进度/总时长；进度条只在叶子 composable 读值，不会拖累整页重组。
-        // ExoPlayer 必须在主线程访问，viewModelScope 默认就是 Main。
-        viewModelScope.launch {
-            while (true) {
-                _playbackPosition.value = player.currentPosition.coerceAtLeast(0L)
-                val total = player.duration
-                if (total > 0L) _duration.value = total
-                delay(PROGRESS_POLL_MILLIS)
+    /** 播放器是否已创建并挂上监听；未进入主页前一直为 false，不会提前 prepare/缓冲音频。 */
+    private var playerAttached = false
+
+    /**
+     * 进入主页（且启动海报已结束）后才创建播放器、拉取歌单并开始轮询。
+     * 启动页/登录页不会走到这里，因此既不会出声，也不会在后台预加载音频。
+     */
+    fun onHomeEntered(enabled: Boolean) {
+        playerManager.setPlaybackAllowed(true)
+        if (!playerAttached) {
+            playerAttached = true
+            playerManager.loadRemotePlaylistOnce()
+            val player = playerManager.ensurePlayer()
+            player.addListener(listener)
+            _currentIndex.value = player.currentMediaItemIndex
+            _currentTrack.value = playerManager.playlist.value.getOrElse(player.currentMediaItemIndex) {
+                _currentTrack.value
+            }
+            _isPlaying.value = player.isPlaying
+            _repeatMode.value = player.repeatMode.toUiRepeatMode()
+            _shuffleMode.value = player.shuffleModeEnabled
+            _playbackPosition.value = player.currentPosition.coerceAtLeast(0L)
+            _duration.value = player.duration.coerceAtLeast(0L)
+            // 500ms 轮询播放进度/总时长；进度条只在叶子 composable 读值，不会拖累整页重组。
+            // ExoPlayer 必须在主线程访问，viewModelScope 默认就是 Main。
+            viewModelScope.launch {
+                while (true) {
+                    val activePlayer = playerManager.peekPlayer() ?: break
+                    _playbackPosition.value = activePlayer.currentPosition.coerceAtLeast(0L)
+                    val total = activePlayer.duration
+                    if (total > 0L) _duration.value = total
+                    delay(PROGRESS_POLL_MILLIS)
+                }
             }
         }
+        autoPlayOnce(enabled)
+    }
+
+    /** 启动海报/登录页：立即静音，不创建播放器，也不影响「自动播放」开关的后续生效。 */
+    fun enterSilentSurface() {
+        // 下次真正进入主页（如重新登录）时仍按偏好决定是否自动播放。
+        autoPlayHandled = false
+        playerManager.setPlaybackAllowed(false)
     }
 
     /**
@@ -121,7 +149,7 @@ class MusicPlayerViewModel @Inject constructor(
         if (autoPlayHandled) return
         autoPlayHandled = true
         if (!enabled) return
-        // 本地缓存/静态歌单已在 init 时立即就绪，不再等待在线歌单。
+        // 播放器已在 onHomeEntered 中创建并准备好当前曲目，直接播放即可。
         if (!player.isPlaying) play()
     }
 
@@ -196,7 +224,7 @@ class MusicPlayerViewModel @Inject constructor(
 
     override fun onCleared() {
         // 只摘掉自己的监听；播放器是应用级单例，绝不在这里释放
-        player.removeListener(listener)
+        playerManager.peekPlayer()?.removeListener(listener)
         super.onCleared()
     }
 

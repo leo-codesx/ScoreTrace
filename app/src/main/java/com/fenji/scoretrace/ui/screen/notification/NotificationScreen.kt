@@ -127,7 +127,7 @@ fun NotificationScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(filtered, key = { it.id }) { notification ->
+                    items(filtered, key = { it.id }, contentType = { "notification" }) { notification ->
                         SwipeableNotificationRow(
                             notification = notification,
                             onDelete = { viewModel.delete(notification.id) },

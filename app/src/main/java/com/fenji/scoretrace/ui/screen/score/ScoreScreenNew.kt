@@ -19,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,6 +43,7 @@ import com.fenji.scoretrace.ui.theme.ScoreTraceColors
 @Composable
 fun ScoreScreenNew(
     viewModel: ScoreViewModelNew = hiltViewModel(),
+    bottomContentPadding: Dp = 0.dp,
     onOpenAi: () -> Unit = {},
     onOpenDetail: (Long) -> Unit = {},
 ) {
@@ -84,7 +86,8 @@ fun ScoreScreenNew(
                         .weight(1f)
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(top = 8.dp),
+                        .padding(top = 8.dp)
+                        .padding(bottom = bottomContentPadding),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     LatestExamCard(

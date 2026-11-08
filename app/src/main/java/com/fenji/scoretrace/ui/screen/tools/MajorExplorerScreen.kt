@@ -1,10 +1,20 @@
 package com.fenji.scoretrace.ui.screen.tools
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -33,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -50,7 +62,8 @@ import com.fenji.scoretrace.util.AppToast
 private val FirstChoices = listOf("物理", "历史")
 private val ElectiveChoices = listOf("化学", "生物", "政治", "地理")
 
-/** 选专业：按 3+1+2 选科组合筛选可报专业，按学科门类分组。 */
+/** 选专业：按 3+1+2 选科组合筛选可报专业，按学科门类分组（可折叠）。 */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MajorExplorerScreen(
     onBack: () -> Unit,
@@ -61,6 +74,7 @@ fun MajorExplorerScreen(
     var electives by remember { mutableStateOf(setOf("化学", "生物")) }
     var groups by remember { mutableStateOf<List<MajorGroup>>(emptyList()) }
     var queried by remember { mutableStateOf(false) }
+    var expandedGroups by remember { mutableStateOf(emptySet<String>()) }
 
     fun toggleElective(item: String) {
         electives = when {
@@ -167,7 +181,23 @@ fun MajorExplorerScreen(
                             }
                         }
                     } else {
-                        items(groups) { group -> MajorGroupCard(group) }
+                        items(
+                            items = groups,
+                            key = { it.categoryName },
+                            contentType = { "majorGroup" },
+                        ) { group ->
+                            MajorGroupCard(
+                                group = group,
+                                expanded = group.categoryName in expandedGroups,
+                                onToggle = {
+                                    expandedGroups = if (group.categoryName in expandedGroups) {
+                                        expandedGroups - group.categoryName
+                                    } else {
+                                        expandedGroups + group.categoryName
+                                    }
+                                },
+                            )
+                        }
                     }
                 } else {
                     item {
@@ -233,17 +263,32 @@ private fun SubjectSelector(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MajorGroupCard(group: MajorGroup) {
+private fun MajorGroupCard(
+    group: MajorGroup,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(durationMillis = 200),
+        label = "majorGroupChevron",
+    )
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(CardShape)
             .background(MaterialTheme.colorScheme.surface)
-            .padding(Dimensions.SpacingMedium),
-        verticalArrangement = Arrangement.spacedBy(Dimensions.SpacingSmall),
+            .animateContentSize(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggle)
+                .padding(Dimensions.SpacingMedium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = group.categoryName,
                 fontSize = 16.sp,
@@ -252,7 +297,7 @@ private fun MajorGroupCard(group: MajorGroup) {
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "${group.total} 个",
+                text = "${group.total} 个专业",
                 fontSize = 12.sp,
                 color = ScoreTraceColors.BrandPrimary,
                 modifier = Modifier
@@ -260,22 +305,63 @@ private fun MajorGroupCard(group: MajorGroup) {
                     .background(ScoreTraceColors.BrandPrimary.copy(alpha = 0.10f))
                     .padding(horizontal = Dimensions.SpacingSmall, vertical = 3.dp),
             )
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = if (expanded) "收起 ${group.categoryName}" else "展开 ${group.categoryName}",
+                tint = ScoreTraceColors.TextSecondaryLight,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(20.dp)
+                    .rotate(chevronRotation),
+            )
         }
-        group.subGroups.forEach { sub ->
-            Column {
-                Text(
-                    text = sub.name,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = ScoreTraceColors.TextSecondaryLight,
-                )
-                Text(
-                    text = sub.majors.joinToString("、") { it.display },
-                    fontSize = 12.sp,
-                    lineHeight = 18.sp,
-                    color = ScoreTraceColors.TextPrimaryLight,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(160)),
+            exit = shrinkVertically(animationSpec = tween(200)) + fadeOut(animationSpec = tween(120)),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = Dimensions.SpacingMedium, end = Dimensions.SpacingMedium, bottom = Dimensions.SpacingMedium),
+                verticalArrangement = Arrangement.spacedBy(Dimensions.SpacingSmall),
+            ) {
+                group.subGroups.forEach { sub ->
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = sub.name,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = ScoreTraceColors.TextSecondaryLight,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                text = "${sub.majors.size} 个",
+                                fontSize = 11.sp,
+                                color = ScoreTraceColors.TextTertiaryLight,
+                            )
+                        }
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            sub.majors.forEach { major ->
+                                Text(
+                                    text = major.display,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = ScoreTraceColors.TextPrimaryLight,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

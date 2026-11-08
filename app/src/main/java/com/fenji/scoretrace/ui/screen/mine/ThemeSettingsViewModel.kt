@@ -15,7 +15,7 @@ data class ThemeSettingsUiState(
     val themeMode: String = "system",
     val enableBlur: Boolean = true,
     val enableFloatingBottomBar: Boolean = true,
-    val enableLiquidGlass: Boolean = true,
+    val enableLiquidGlass: Boolean = false,
     val enablePredictiveBack: Boolean = true,
 )
 
