@@ -1,12 +1,12 @@
 // 仓库统一走阿里云镜像（本构建环境无法直连 dl.google.com / repo1.maven.org）
 pluginManagement {
     repositories {
+        // Gradle Plugin Portal 必须排在阿里云前面：KSP 的插件标记不在 Google Maven，
+        // 而阿里云的 google 镜像对缺失构件返回 502（不是 404），Gradle 会当作仓库异常直接判插件不存在。
+        gradlePluginPortal()
         maven { url = uri("https://maven.aliyun.com/repository/google") }
         maven { url = uri("https://maven.aliyun.com/repository/central") }
         maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
-        // KSP 的插件标记只发布在 Gradle Plugin Portal（阿里云三个镜像都没有），
-        // 本机靠缓存命中，CI 干净环境会直接报 "Plugin was not found"。
-        gradlePluginPortal()
     }
 }
 
