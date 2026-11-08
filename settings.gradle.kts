@@ -4,6 +4,9 @@ pluginManagement {
         maven { url = uri("https://maven.aliyun.com/repository/google") }
         maven { url = uri("https://maven.aliyun.com/repository/central") }
         maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+        // KSP 的插件标记只发布在 Gradle Plugin Portal（阿里云三个镜像都没有），
+        // 本机靠缓存命中，CI 干净环境会直接报 "Plugin was not found"。
+        gradlePluginPortal()
     }
 }
 
