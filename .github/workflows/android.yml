@@ -1,0 +1,52 @@
+name: Build ScoreTrace APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # 允许在 GitHub 网页端手动点击按钮触发
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 仓库里没有 local.properties（已在 .gitignore 忽略），构建前用 Secrets 生成一份。
+      # 通过环境变量传递，避免密钥出现在日志或命令行里。
+      - name: Create local.properties with Secrets
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
+          AUTHING_APP_ID: ${{ secrets.AUTHING_APP_ID }}
+          AUTHING_DOMAIN: ${{ secrets.AUTHING_DOMAIN }}
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "deepseek.api.key=$DEEPSEEK_API_KEY" >> local.properties
+          echo "glm.api.key=$GLM_API_KEY" >> local.properties
+          echo "authing.app.id=$AUTHING_APP_ID" >> local.properties
+          echo "authing.domain=$AUTHING_DOMAIN" >> local.properties
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScoreTrace-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
