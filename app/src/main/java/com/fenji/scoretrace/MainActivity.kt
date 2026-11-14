@@ -91,8 +91,7 @@ class MainActivity : ComponentActivity() {
             }
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = initialThemeMode)
             val enableBlur by userPreferences.enableBlur.collectAsStateWithLifecycle(initialValue = true)
-            val enableFloatingBottomBar by userPreferences.enableFloatingBottomBar.collectAsStateWithLifecycle(initialValue = true)
-            val enableLiquidGlass by userPreferences.enableLiquidGlass.collectAsStateWithLifecycle(initialValue = false)
+            val enableLiquidGlass by userPreferences.enableLiquidGlass.collectAsStateWithLifecycle(initialValue = true)
             val enablePredictiveBack by userPreferences.enablePredictiveBack.collectAsStateWithLifecycle(initialValue = true)
             val darkTheme = when (themeMode) {
                 "light" -> false
@@ -102,7 +101,6 @@ class MainActivity : ComponentActivity() {
             ScoreTraceTheme(
                 darkTheme = darkTheme,
                 enableBlur = enableBlur,
-                enableFloatingBottomBar = enableFloatingBottomBar,
                 enableLiquidGlass = enableLiquidGlass,
                 enablePredictiveBack = enablePredictiveBack,
             ) {

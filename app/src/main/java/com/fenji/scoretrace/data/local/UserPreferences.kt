@@ -54,16 +54,9 @@ class UserPreferences @Inject constructor(
         context.dataStore.edit { it[KEY_ENABLE_BLUR] = enabled }
     }
 
-    /** KernelSU 风格悬浮底栏 */
-    val enableFloatingBottomBar: Flow<Boolean> =
-        context.dataStore.data.map { it[KEY_ENABLE_FLOATING_BOTTOM_BAR] ?: true }
-    suspend fun setEnableFloatingBottomBar(enabled: Boolean) {
-        context.dataStore.edit { it[KEY_ENABLE_FLOATING_BOTTOM_BAR] = enabled }
-    }
-
-    /** 悬浮底栏液态玻璃：默认关闭，回退到干净的半透明胶囊 */
+    /** 悬浮底栏液态玻璃（液滴折射/高光） */
     val enableLiquidGlass: Flow<Boolean> =
-        context.dataStore.data.map { it[KEY_ENABLE_LIQUID_GLASS] ?: false }
+        context.dataStore.data.map { it[KEY_ENABLE_LIQUID_GLASS] ?: true }
     suspend fun setEnableLiquidGlass(enabled: Boolean) {
         context.dataStore.edit { it[KEY_ENABLE_LIQUID_GLASS] = enabled }
     }
@@ -293,7 +286,6 @@ class UserPreferences @Inject constructor(
         val KEY_GAOKAO_TIMESTAMP = longPreferencesKey("gaokao_timestamp")
         val KEY_AUTO_PLAY_MUSIC = booleanPreferencesKey("auto_play_music")
         val KEY_ENABLE_BLUR = booleanPreferencesKey("enable_blur")
-        val KEY_ENABLE_FLOATING_BOTTOM_BAR = booleanPreferencesKey("enable_floating_bottom_bar")
         val KEY_ENABLE_LIQUID_GLASS = booleanPreferencesKey("enable_liquid_glass")
         val KEY_ENABLE_PREDICTIVE_BACK = booleanPreferencesKey("enable_predictive_back")
         val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")

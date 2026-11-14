@@ -14,8 +14,7 @@ import javax.inject.Inject
 data class ThemeSettingsUiState(
     val themeMode: String = "system",
     val enableBlur: Boolean = true,
-    val enableFloatingBottomBar: Boolean = true,
-    val enableLiquidGlass: Boolean = false,
+    val enableLiquidGlass: Boolean = true,
     val enablePredictiveBack: Boolean = true,
 )
 
@@ -27,11 +26,10 @@ class ThemeSettingsViewModel @Inject constructor(
     val state: StateFlow<ThemeSettingsUiState> = combine(
         userPreferences.themeMode,
         userPreferences.enableBlur,
-        userPreferences.enableFloatingBottomBar,
         userPreferences.enableLiquidGlass,
         userPreferences.enablePredictiveBack,
-    ) { themeMode, blur, floating, liquid, predictive ->
-        ThemeSettingsUiState(themeMode, blur, floating, liquid, predictive)
+    ) { themeMode, blur, liquid, predictive ->
+        ThemeSettingsUiState(themeMode, blur, liquid, predictive)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -44,10 +42,6 @@ class ThemeSettingsViewModel @Inject constructor(
 
     fun setEnableBlur(enabled: Boolean) {
         viewModelScope.launch { userPreferences.setEnableBlur(enabled) }
-    }
-
-    fun setEnableFloatingBottomBar(enabled: Boolean) {
-        viewModelScope.launch { userPreferences.setEnableFloatingBottomBar(enabled) }
     }
 
     fun setEnableLiquidGlass(enabled: Boolean) {

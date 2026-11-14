@@ -148,6 +148,7 @@ dependencies {
 
     // KernelSU 风格模糊 / 液态玻璃
     implementation(libs.haze)
+    implementation(libs.haze.blur)
     implementation(libs.kyant.backdrop)
 
     // 测试

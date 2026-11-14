@@ -95,14 +95,6 @@ fun ThemeSettingsScreen(
                     )
                     KernelDivider()
                     KernelSwitchRow(
-                        iconRes = R.drawable.ic_kernel_floating,
-                        title = "悬浮底栏",
-                        subtitle = "使用 Apple 风格的悬浮底栏",
-                        checked = state.enableFloatingBottomBar,
-                        onCheckedChange = viewModel::setEnableFloatingBottomBar,
-                    )
-                    KernelDivider()
-                    KernelSwitchRow(
                         iconRes = R.drawable.ic_kernel_liquid,
                         title = "液态玻璃",
                         subtitle = "启用悬浮底栏的液态玻璃效果",
@@ -121,7 +113,7 @@ fun ThemeSettingsScreen(
 
                 Spacer(modifier = Modifier.height(Dimensions.SpacingMedium))
                 Text(
-                    text = "开关实时生效；悬浮底栏与液态玻璃仅影响底部导航栏。",
+                    text = "开关实时生效；模糊与液态玻璃仅影响底部导航栏。",
                     fontSize = 11.sp,
                     color = ScoreTraceColors.TextTertiaryLight,
                     textAlign = TextAlign.Center,

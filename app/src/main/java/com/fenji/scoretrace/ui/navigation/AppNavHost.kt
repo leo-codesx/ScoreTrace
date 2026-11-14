@@ -53,7 +53,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.fenji.scoretrace.R
-import com.fenji.scoretrace.ui.component.kernelsu.FloatingBottomBar
+import com.fenji.scoretrace.ui.component.bottombar.FloatingBottomBar
+import com.fenji.scoretrace.ui.component.bottombar.NavigationItem
 import com.fenji.scoretrace.ui.music.MusicPlayerViewModel
 import com.fenji.scoretrace.ui.screen.ai.AiHistoryScreen
 import com.fenji.scoretrace.ui.screen.ai.AiScreen
@@ -80,14 +81,13 @@ import com.fenji.scoretrace.ui.screen.tools.ScoreConvertScreen
 import com.fenji.scoretrace.ui.screen.tools.ScoreSectionScreen
 import com.fenji.scoretrace.ui.screen.tools.ToolsScreen
 import com.fenji.scoretrace.ui.theme.LocalEnableBlur
-import com.fenji.scoretrace.ui.theme.LocalEnableFloatingBottomBar
 import com.fenji.scoretrace.ui.theme.LocalEnableLiquidGlass
 import com.fenji.scoretrace.ui.theme.LocalEnablePredictiveBack
 import com.fenji.scoretrace.util.AppToast
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 
@@ -108,7 +108,6 @@ fun AppNavHost(
     onBottomBarVisibleChange: (Boolean) -> Unit = {},
 ) {
     val enableBlur = LocalEnableBlur.current
-    val enableFloatingBottomBar = LocalEnableFloatingBottomBar.current
     val enableLiquidGlass = LocalEnableLiquidGlass.current
     val enablePredictiveBack = LocalEnablePredictiveBack.current
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -146,10 +145,10 @@ fun AppNavHost(
         currentRoute == Screen.UserAgreement.route ||
         (currentRoute == Screen.AI.route && imeVisible)
 
-    // 悬浮底栏高度 = 6dp 上边距 + 52dp Pill + 6dp 下边距 + 系统导航栏；不随内容变化。
+    // 悬浮底栏高度 = 8dp 上边距 + 64dp Pill + 8dp 下边距 + 系统导航栏；不随内容变化。
     // 内容区不再让 Scaffold 扣除这段高度，而是自己延伸到 Pill 后方，Haze/液态玻璃才有可采样的背板。
     val barBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val bottomContentPadding = if (hideBottomBar) 0.dp else 64.dp + barBottomPadding + 16.dp
+    val bottomContentPadding = if (hideBottomBar) 0.dp else 80.dp + barBottomPadding + 8.dp
 
     LaunchedEffect(hideBottomBar) { onBottomBarVisibleChange(!hideBottomBar) }
 
@@ -183,11 +182,11 @@ fun AppNavHost(
     }
 
     val tabs = listOf(
-        BottomBarTab(Screen.Home, R.string.tab_home, rememberVectorPainter(Icons.Filled.Home)),
-        BottomBarTab(Screen.AI, R.string.tab_ai, painterResource(R.drawable.ic_ai_logo)),
-        BottomBarTab(Screen.Score, R.string.tab_score, painterResource(R.drawable.ic_bar_chart)),
-        BottomBarTab(Screen.Tools, R.string.tab_tools, painterResource(R.drawable.ic_auto_awesome)),
-        BottomBarTab(Screen.Mine, R.string.tab_mine, rememberVectorPainter(Icons.Filled.Person)),
+        NavigationItem(Screen.Home.route, R.string.tab_home, rememberVectorPainter(Icons.Filled.Home)),
+        NavigationItem(Screen.AI.route, R.string.tab_ai, painterResource(R.drawable.ic_ai_logo)),
+        NavigationItem(Screen.Score.route, R.string.tab_score, painterResource(R.drawable.ic_bar_chart)),
+        NavigationItem(Screen.Tools.route, R.string.tab_tools, painterResource(R.drawable.ic_auto_awesome)),
+        NavigationItem(Screen.Mine.route, R.string.tab_mine, rememberVectorPainter(Icons.Filled.Person)),
     )
 
     // 返回键：五个底部 Tab 上连按两次退出应用；其余子页面（成绩详情/目标院校/设置等）返回上一页。
@@ -231,7 +230,7 @@ fun AppNavHost(
         }
     }
 
-    val hazeState = remember { HazeState() }
+    val hazeState = rememberHazeState()
     // 液态玻璃的采样源：先把页面底色铺满（透明区域不会糊成色斑），再录内容。
     // onDraw 不是 @Composable，颜色必须在 lambda 外读好。
     val screenBackground = MaterialTheme.colorScheme.background
@@ -244,30 +243,19 @@ fun AppNavHost(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (!hideBottomBar) {
-                if (enableFloatingBottomBar) {
-                    FloatingBottomBar(
-                        tabs = tabs,
-                        currentRoute = currentRoute,
-                        onSelect = {
-                            showMusicPanel = false
-                            navController.navigateToTab(it)
-                        },
-                        hazeState = if (enableBlur) hazeState else null,
-                        screenBackdrop = if (enableLiquidGlass) screenBackdrop else null,
-                        blurEnabled = enableBlur,
-                        liquidGlassEnabled = enableLiquidGlass,
-                    )
-                } else {
-                    LightBottomBar(
-                        tabs = tabs,
-                        currentRoute = currentRoute,
-                        onSelect = {
-                            // 切 Tab 前先收起音乐面板
-                            showMusicPanel = false
-                            navController.navigateToTab(it)
-                        },
-                    )
-                }
+                FloatingBottomBar(
+                    items = tabs,
+                    currentRoute = currentRoute,
+                    onSelect = {
+                        // 切 Tab 前先收起音乐面板
+                        showMusicPanel = false
+                        navController.navigateToTab(it.route)
+                    },
+                    hazeState = hazeState,
+                    enableBlur = enableBlur,
+                    backdrop = if (enableLiquidGlass) screenBackdrop else null,
+                    enableLiquidGlass = enableLiquidGlass,
+                )
             }
         },
         // 顶部由 Scaffold 处理状态栏；底部不再扣除底栏高度，内容延伸到 Pill 后方供模糊/折射采样
@@ -287,7 +275,7 @@ fun AppNavHost(
                     translationX = -24.dp.toPx() * progress
                     alpha = 1f - 0.25f * progress
                 }
-                .then(if (enableBlur) Modifier.haze(hazeState) else Modifier)
+                .then(if (enableBlur) Modifier.hazeSource(hazeState) else Modifier)
                 .then(if (enableLiquidGlass) Modifier.layerBackdrop(screenBackdrop) else Modifier),
             // 进入二级页：新页从右整幅滑入，当前页只向左退 1/3 并淡出（视差，显得更顺滑）
             enterTransition = {
@@ -330,7 +318,7 @@ fun AppNavHost(
                     showMusicPanel = showMusicPanel,
                     onMusicPanelChange = { showMusicPanel = it },
                     bottomContentPadding = bottomContentPadding,
-                    onOpenScore = { navController.navigateToTab(Screen.Score) },
+                    onOpenScore = { navController.navigateToTab(Screen.Score.route) },
                     onOpenTargetSchool = { navController.navigate(Screen.TargetSchool.route) },
                     onOpenAiScore = { navController.navigate(Screen.AiScoreInput.createRoute()) },
                     onOpenManualScore = { navController.navigate(Screen.ManualScoreInput.createRoute()) },
@@ -375,7 +363,7 @@ fun AppNavHost(
             ) {
                 ScoreScreenNew(
                     bottomContentPadding = bottomContentPadding,
-                    onOpenAi = { navController.navigateToTab(Screen.AI) },
+                    onOpenAi = { navController.navigateToTab(Screen.AI.route) },
                     onOpenDetail = { examId ->
                         navController.navigate(Screen.ScoreDetail.createRoute(examId))
                     },
@@ -406,7 +394,7 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() },
                     onAiAnalyze = { prompt ->
                         pendingAiPrompt = prompt
-                        navController.navigateToTab(Screen.AI)
+                        navController.navigateToTab(Screen.AI.route)
                     },
                     onEdit = { examId ->
                         navController.navigate(Screen.ManualScoreInput.createRoute(examId))
@@ -428,7 +416,7 @@ fun AppNavHost(
                     onOpenFeedback = { navController.navigate(Screen.Feedback.route) },
                     onOpenAccountSettings = { navController.navigate(Screen.AccountSettings.route) },
                     onOpenThemeSettings = { navController.navigate(Screen.ThemeSettings.route) },
-                    onNavigateHome = { navController.navigateToTab(Screen.Home) },
+                    onNavigateHome = { navController.navigateToTab(Screen.Home.route) },
                 )
             }
             composable(Screen.TargetSchool.route) {
@@ -582,8 +570,8 @@ private const val KEY_LOAD_CONVERSATION = "loadConversationId"
 private const val KEY_NEW_CHAT = "newChatTick"
 
 /** 底部 Tab 统一的切换逻辑：单栈、保留各 Tab 的滚动位置。 */
-private fun NavHostController.navigateToTab(screen: Screen) {
-    navigate(screen.route) {
+private fun NavHostController.navigateToTab(route: String) {
+    navigate(route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
