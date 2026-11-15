@@ -141,6 +141,16 @@ class MusicPlayerViewModel @Inject constructor(
         playerManager.setPlaybackAllowed(false)
     }
 
+    /** 应用退到后台（ON_STOP）：记住进度并暂停。 */
+    fun onAppBackground() {
+        playerManager.onAppBackground()
+    }
+
+    /** 应用回到前台（ON_START）：只在主页调用，恢复后台前的播放。 */
+    fun onAppForeground() {
+        playerManager.onAppForeground()
+    }
+
     /**
      * 按偏好决定是否自动播放，且**每个 ViewModel 实例只处理一次**：
      * 已在播放或已处理过就什么都不做，因此切回首页不会重启/打断当前播放。

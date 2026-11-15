@@ -23,11 +23,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -43,6 +43,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -84,8 +87,6 @@ import com.fenji.scoretrace.ui.theme.LocalEnableBlur
 import com.fenji.scoretrace.ui.theme.LocalEnableLiquidGlass
 import com.fenji.scoretrace.ui.theme.LocalEnablePredictiveBack
 import com.fenji.scoretrace.util.AppToast
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.CancellationException
@@ -159,6 +160,22 @@ fun AppNavHost(
         }
     }
 
+    // 前后台：退到后台（ON_STOP）立即暂停，回到前台（ON_START）且当前在主页时恢复播放。
+    // 其他 Tab 不回前台自动续播——避免在成绩/AI 页被突然响起的声音打断。
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val onHomeRoute = currentRoute == Screen.Home.route
+    DisposableEffect(lifecycleOwner, contentReady, onHomeRoute) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> musicViewModel.onAppBackground()
+                Lifecycle.Event.ON_START -> if (contentReady && onHomeRoute) musicViewModel.onAppForeground()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // 首次登录成功后检测本机未绑定账号的数据，弹窗询问是否迁移。
     LaunchedEffect(authState.isLoggedIn) {
         if (authState.isLoggedIn) migrationViewModel.checkOnce()
@@ -200,44 +217,31 @@ fun AppNavHost(
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
     var predictiveBackProgress by remember { mutableFloatStateOf(0f) }
     val context = LocalContext.current
-    if (enablePredictiveBack && currentRoute != null &&
+    // 二级页且开关开启时才接管返回；关闭时二级页交回 NavHost 的默认返回逻辑。
+    val predictiveBackRoute = enablePredictiveBack && currentRoute != null &&
         currentRoute !in topLevelRoutes && currentRoute != Screen.Login.route
-    ) {
-        PredictiveBackHandler { progress ->
-            try {
-                // 直接驱动页面缩放/淡出，手势中途取消时复位，不留下半透明页面
-                progress.collect { predictiveBackProgress = it.progress }
-                predictiveBackProgress = 0f
-                navController.popBackStack()
-            } catch (_: CancellationException) {
-                predictiveBackProgress = 0f
-            }
+    PredictiveBackHandler(enabled = predictiveBackRoute) { progress ->
+        try {
+            // 直接驱动页面缩放/淡出，手势中途取消时复位，不留下半透明页面
+            progress.collect { predictiveBackProgress = it.progress }
+            predictiveBackProgress = 0f
+            navController.popBackStack()
+        } catch (_: CancellationException) {
+            predictiveBackProgress = 0f
         }
-    } else {
-        BackHandler {
-            // 底部 Tab 与登录页都没有可返回的上一页（登录页是未登录时的唯一页）→ 双击退出应用
-            if (currentRoute in topLevelRoutes || currentRoute == Screen.Login.route) {
-                val now = System.currentTimeMillis()
-                if (now - lastBackPressTime < 2000L) {
-                    (context as? Activity)?.finish()
-                } else {
-                    lastBackPressTime = now
-                    AppToast.info("再按一次退出应用")
-                }
-            } else {
-                navController.popBackStack()
-            }
+    }
+    // 底部 Tab 与登录页都没有可返回的上一页 → 连按两次退出应用
+    BackHandler(enabled = !predictiveBackRoute && (currentRoute in topLevelRoutes || currentRoute == Screen.Login.route)) {
+        val now = System.currentTimeMillis()
+        if (now - lastBackPressTime < 2000L) {
+            (context as? Activity)?.finish()
+        } else {
+            lastBackPressTime = now
+            AppToast.info("再按一次退出应用")
         }
     }
 
     val hazeState = rememberHazeState()
-    // 液态玻璃的采样源：先把页面底色铺满（透明区域不会糊成色斑），再录内容。
-    // onDraw 不是 @Composable，颜色必须在 lambda 外读好。
-    val screenBackground = MaterialTheme.colorScheme.background
-    val screenBackdrop = rememberLayerBackdrop {
-        drawRect(screenBackground)
-        drawContent()
-    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -253,7 +257,6 @@ fun AppNavHost(
                     },
                     hazeState = hazeState,
                     enableBlur = enableBlur,
-                    backdrop = if (enableLiquidGlass) screenBackdrop else null,
                     enableLiquidGlass = enableLiquidGlass,
                 )
             }
@@ -275,8 +278,7 @@ fun AppNavHost(
                     translationX = -24.dp.toPx() * progress
                     alpha = 1f - 0.25f * progress
                 }
-                .then(if (enableBlur) Modifier.hazeSource(hazeState) else Modifier)
-                .then(if (enableLiquidGlass) Modifier.layerBackdrop(screenBackdrop) else Modifier),
+                .then(if (enableBlur) Modifier.hazeSource(hazeState) else Modifier),
             // 进入二级页：新页从右整幅滑入，当前页只向左退 1/3 并淡出（视差，显得更顺滑）
             enterTransition = {
                 slideInHorizontally(

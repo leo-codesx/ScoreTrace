@@ -17,8 +17,8 @@ android {
         applicationId = "com.fenji.scoretrace"
         minSdk = 33
         targetSdk = 37
-        versionCode = 3
-        versionName = "1.0.3"
+        versionCode = 4
+        versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -146,10 +146,9 @@ dependencies {
     // Toast（Compose Sonner）
     implementation(libs.sonner)
 
-    // KernelSU 风格模糊 / 液态玻璃
+    // KernelSU 风格模糊：Haze 2.0（含 haze-blur 扩展）
     implementation(libs.haze)
     implementation(libs.haze.blur)
-    implementation(libs.kyant.backdrop)
 
     // 测试
     testImplementation(libs.junit)
